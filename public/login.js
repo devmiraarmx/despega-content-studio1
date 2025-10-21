@@ -1,5 +1,5 @@
 /* ═════════════════════════════════════════════════════════════
-   DESPEGA CONTENT STUDIO - LOGIN
+   DESPEGA CONTENT STUDIO - LOGIN CON JWT
    ═════════════════════════════════════════════════════════════ */
 
 const API_BASE_URL = window.location.hostname === 'localhost' 
@@ -26,25 +26,27 @@ loginForm.addEventListener('submit', async (e) => {
     hideError();
 
     try {
-        console.log('Intentando login con:', { username, passwordLength: password.length });
+        console.log('Intentando login...');
         
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            credentials: 'include',
             body: JSON.stringify({ username, password })
         });
 
-        console.log('Response status:', response.status);
-        
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log('Respuesta:', data);
 
         if (response.ok && data.success) {
-            // Login exitoso - redirigir a la app principal
-            console.log('Login exitoso, redirigiendo...');
+            // Guardar token en sessionStorage
+            sessionStorage.setItem('auth_token', data.token);
+            sessionStorage.setItem('username', data.username);
+            
+            console.log('✅ Token guardado, redirigiendo...');
+            
+            // Redirigir a la app principal
             window.location.href = '/';
         } else {
             showError(data.detalles || data.error || 'Credenciales incorrectas');
@@ -53,8 +55,8 @@ loginForm.addEventListener('submit', async (e) => {
         }
 
     } catch (error) {
-        console.error('Error completo:', error);
-        showError('Error de conexión. Verifica tu internet e intenta nuevamente.');
+        console.error('Error:', error);
+        showError('Error de conexión. Intenta nuevamente.');
         btnLogin.disabled = false;
         btnLogin.textContent = 'Iniciar Sesión';
     }
@@ -69,5 +71,5 @@ function hideError() {
     errorMessage.classList.remove('show');
 }
 
-console.log('✅ Login page cargada');
+console.log('✅ Login page cargada con JWT');
 console.log('🌐 API Base URL:', API_BASE_URL || 'Producción (mismo dominio)');

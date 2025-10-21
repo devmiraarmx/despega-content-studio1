@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════════════════
-// DESPEGA CONTENT STUDIO - SERVER
+// DESPEGA CONTENT STUDIO - SERVER CON JWT
 // Generador de Carruseles con IA para Instagram
 // By: Odiley Vargas - EME360PRO
-// Compatible con Vercel Serverless + Login
+// Optimizado para Vercel Serverless con JWT Authentication
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -12,7 +12,7 @@ import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import session from 'express-session';
+import jwt from 'jsonwebtoken';
 
 // Configuración de rutas para ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -23,6 +23,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-in-production';
 
 // Middlewares
 app.use(cors({
@@ -30,19 +31,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
-
-// Session middleware - Configuración optimizada para Vercel
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'despega-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true, // Siempre true porque Vercel usa HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: 'lax' // Importante para Vercel
-  }
-}));
 
 // Cargar el System Prompt desde archivo
 const systemPromptPath = path.join(__dirname, 'system-prompt-despega.md');
@@ -57,23 +45,30 @@ try {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MIDDLEWARE: Verificar autenticación
+// MIDDLEWARE: Verificar JWT Token
 // ═══════════════════════════════════════════════════════════════════════════════
 const requireAuth = (req, res, next) => {
-  if (req.session && req.session.authenticated) {
-    return next();
-  }
+  const authHeader = req.headers.authorization;
   
-  // Si es una petición API, devolver 401
-  if (req.path.startsWith('/api/')) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       error: 'No autenticado',
-      detalles: 'Debes iniciar sesión para acceder a esta funcionalidad'
+      detalles: 'Token no proporcionado'
     });
   }
-  
-  // Si es página HTML, redirigir a login
-  res.redirect('/login.html');
+
+  const token = authHeader.replace('Bearer ', '');
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      error: 'Token inválido',
+      detalles: 'Tu sesión ha expirado. Inicia sesión nuevamente.'
+    });
+  }
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -86,25 +81,26 @@ app.post('/api/login', (req, res) => {
   const validPassword = process.env.LOGIN_PASSWORD || 'despega2024';
 
   if (username === validUsername && password === validPassword) {
-    req.session.authenticated = true;
-    req.session.username = username;
+    // Crear JWT token válido por 24 horas
+    const token = jwt.sign(
+      { 
+        username: username,
+        loginTime: Date.now()
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
     
-    // Guardar la sesión explícitamente
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error al guardar sesión:', err);
-        return res.status(500).json({
-          error: 'Error al crear sesión'
-        });
-      }
-      
-      res.json({
-        success: true,
-        message: 'Login exitoso',
-        username: username
-      });
+    console.log(`✅ Login exitoso para: ${username}`);
+    
+    res.json({
+      success: true,
+      message: 'Login exitoso',
+      token: token,
+      username: username
     });
   } else {
+    console.log(`❌ Login fallido para: ${username}`);
     res.status(401).json({
       error: 'Credenciales inválidas',
       detalles: 'Usuario o contraseña incorrectos'
@@ -113,68 +109,52 @@ app.post('/api/login', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Verificar autenticación
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/check-auth', (req, res) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.json({ authenticated: false });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    res.json({
+      authenticated: true,
+      username: decoded.username
+    });
+  } catch (error) {
+    res.json({ authenticated: false });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ENDPOINT: Logout
 // ═══════════════════════════════════════════════════════════════════════════════
 app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({
-        error: 'Error al cerrar sesión'
-      });
-    }
-    res.json({
-      success: true,
-      message: 'Sesión cerrada correctamente'
-    });
+  // Con JWT, el logout es manejado en el cliente (eliminar token)
+  res.json({
+    success: true,
+    message: 'Sesión cerrada correctamente'
   });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Verificar sesión
+// Servir archivos estáticos
 // ═══════════════════════════════════════════════════════════════════════════════
-app.get('/api/check-auth', (req, res) => {
-  if (req.session && req.session.authenticated) {
-    res.json({
-      authenticated: true,
-      username: req.session.username
-    });
-  } else {
-    res.json({
-      authenticated: false
-    });
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Servir archivos estáticos públicos (login.html, login.js, login.css)
-// ═══════════════════════════════════════════════════════════════════════════════
-app.use('/login.html', express.static(path.join(__dirname, 'public', 'login.html')));
-app.use('/login.js', express.static(path.join(__dirname, 'public', 'login.js')));
-app.use('/login.css', express.static(path.join(__dirname, 'public', 'login.css')));
-app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Proteger la app principal con autenticación
-// ═══════════════════════════════════════════════════════════════════════════════
-app.use('/', (req, res, next) => {
-  // Permitir acceso a login sin autenticación
-  if (req.path === '/login.html' || req.path === '/login.js' || req.path === '/login.css' || req.path === '/styles.css' || req.path.startsWith('/api/login') || req.path === '/api/check-auth') {
-    return next();
-  }
-  
-  // Proteger todo lo demás
-  requireAuth(req, res, next);
-});
-
 app.use(express.static('public'));
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Generar Carrusel Completo (PROTEGIDO)
+// ENDPOINT: Generar Carrusel Completo (PROTEGIDO CON JWT)
 // ═══════════════════════════════════════════════════════════════════════════════
 app.post('/api/generar-carrusel', requireAuth, async (req, res) => {
   try {
     const { tema, estilo_copy } = req.body;
 
+    // Validaciones
     if (!tema || tema.trim() === '') {
       return res.status(400).json({
         error: 'El tema es requerido',
@@ -198,6 +178,7 @@ app.post('/api/generar-carrusel', requireAuth, async (req, res) => {
 
     console.log(`\n🎨 Generando carrusel sobre: "${tema}"`);
     console.log(`📝 Estilo de copy: ${estilo_copy}`);
+    console.log(`👤 Usuario: ${req.user.username}`);
 
     const userPrompt = `
 Genera un carrusel completo de 5 slides sobre el siguiente tema:
@@ -288,7 +269,7 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Regenerar Slide Individual (PROTEGIDO)
+// ENDPOINT: Regenerar Slide Individual (PROTEGIDO CON JWT)
 // ═══════════════════════════════════════════════════════════════════════════════
 app.post('/api/regenerar-slide', requireAuth, async (req, res) => {
   try {
@@ -302,6 +283,7 @@ app.post('/api/regenerar-slide', requireAuth, async (req, res) => {
     }
 
     console.log(`\n🔄 Regenerando slide ${numero_slide} sobre: "${tema}"`);
+    console.log(`👤 Usuario: ${req.user.username}`);
 
     const userPrompt = `
 Regenera el slide número ${numero_slide} del carrusel sobre: "${tema}"
@@ -391,7 +373,7 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Regenerar Copy de Instagram (PROTEGIDO)
+// ENDPOINT: Regenerar Copy de Instagram (PROTEGIDO CON JWT)
 // ═══════════════════════════════════════════════════════════════════════════════
 app.post('/api/regenerar-copy', requireAuth, async (req, res) => {
   try {
@@ -405,6 +387,7 @@ app.post('/api/regenerar-copy', requireAuth, async (req, res) => {
     }
 
     console.log(`\n🔄 Regenerando copy (${estilo_copy}) sobre: "${tema}"`);
+    console.log(`👤 Usuario: ${req.user.username}`);
 
     const userPrompt = `
 Regenera el copy de Instagram sobre: "${tema}"
@@ -497,7 +480,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     service: 'DESPEGA Content Studio',
-    version: '1.0.0',
+    version: '1.0.1-jwt',
     system_prompt_loaded: SYSTEM_PROMPT.length > 100,
     timestamp: new Date().toISOString()
   });
@@ -511,11 +494,13 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('\n═══════════════════════════════════════════════════════════════');
     console.log('   🚀 DESPEGA CONTENT STUDIO');
     console.log('   Generador de Carruseles con IA para Instagram');
+    console.log('   🔐 Con autenticación JWT');
     console.log('═══════════════════════════════════════════════════════════════');
     console.log(`\n✅ Servidor corriendo en: http://localhost:${PORT}`);
     console.log(`📝 System Prompt: ${SYSTEM_PROMPT.length > 100 ? 'Cargado ✅' : 'No cargado ❌'}`);
     console.log(`🔑 API Key: ${process.env.CLAUDE_API_KEY ? 'Configurada ✅' : 'Falta configurar ❌'}`);
     console.log(`👤 Login: ${process.env.LOGIN_USERNAME || 'admin'} / ${process.env.LOGIN_PASSWORD ? '***' : 'despega2024'}`);
+    console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? 'Configurado ✅' : 'Usando default ⚠️'}`);
     console.log('\n═══════════════════════════════════════════════════════════════\n');
   });
 }

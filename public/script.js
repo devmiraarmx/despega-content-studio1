@@ -1,7 +1,7 @@
 /* ═════════════════════════════════════════════════════════════
    DESPEGA CONTENT STUDIO - JAVASCRIPT
-   Con identidad EME360PRO y preview de imágenes
-   Compatible con Vercel + Sistema de Login
+   Con identidad EME360PRO y autenticación JWT
+   Compatible con Vercel
    ═════════════════════════════════════════════════════════════ */
 
 // Detectar entorno (desarrollo o producción)
@@ -10,21 +10,36 @@ const API_BASE_URL = window.location.hostname === 'localhost'
     : '';
 
 // ═══════════════════════════════════════════════════════════════
-// VERIFICAR AUTENTICACIÓN AL CARGAR LA PÁGINA
+// VERIFICAR AUTENTICACIÓN CON JWT AL CARGAR LA PÁGINA
 // ═══════════════════════════════════════════════════════════════
 (async function checkAuth() {
+    const token = sessionStorage.getItem('auth_token');
+    
+    if (!token) {
+        console.log('❌ No hay token, redirigiendo a login...');
+        window.location.href = '/login.html';
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/check-auth`, {
-            credentials: 'include'
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
         
         const data = await response.json();
         
         if (!data.authenticated) {
+            console.log('❌ Token inválido, redirigiendo a login...');
+            sessionStorage.clear();
             window.location.href = '/login.html';
+        } else {
+            console.log('✅ Usuario autenticado:', data.username);
         }
     } catch (error) {
         console.error('Error al verificar autenticación:', error);
+        sessionStorage.clear();
         window.location.href = '/login.html';
     }
 })();
@@ -37,6 +52,26 @@ const state = {
     copy: null,
     slideActual: 0
 };
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Obtener headers con JWT
+// ═══════════════════════════════════════════════════════════════
+function getAuthHeaders() {
+    const token = sessionStorage.getItem('auth_token');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Manejar errores 401 (token expirado)
+// ═══════════════════════════════════════════════════════════════
+function handleUnauthorized() {
+    alert('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+    sessionStorage.clear();
+    window.location.href = '/login.html';
+}
 
 // ═══════════════════════════════════════════════════════════════
 // SECCIÓN 1: UPLOAD DE IMAGEN
@@ -164,15 +199,17 @@ async function generarCarrusel() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/generar-carrusel`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 tema: tema,
                 estilo_copy: estiloCopy
             })
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         if (!response.ok) {
             const error = await response.json();
@@ -376,10 +413,7 @@ btnRegenerarSlide.addEventListener('click', async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/regenerar-slide`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 tema: tema,
                 numero_slide: slideIndex + 1,
@@ -387,6 +421,11 @@ btnRegenerarSlide.addEventListener('click', async () => {
                 contexto_carrusel: state.carrusel.slides
             })
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         if (!response.ok) throw new Error('Error al regenerar slide');
 
@@ -433,16 +472,18 @@ btnRegenerarCopy.addEventListener('click', async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/api/regenerar-copy`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
+            headers: getAuthHeaders(),
             body: JSON.stringify({
                 tema: tema,
                 estilo_copy: estiloCopy,
                 slides_del_carrusel: state.carrusel.slides
             })
         });
+
+        if (response.status === 401) {
+            handleUnauthorized();
+            return;
+        }
 
         if (!response.ok) throw new Error('Error al regenerar copy');
 
@@ -559,5 +600,5 @@ btnNuevoCarrusel.addEventListener('click', () => {
 
 console.log('✅ DESPEGA Content Studio cargado');
 console.log('💙 Con identidad EME360PRO');
+console.log('🔐 Sistema de autenticación JWT activado');
 console.log(`🌐 API Base URL: ${API_BASE_URL || 'Producción (mismo dominio)'}`);
-console.log('🔐 Sistema de autenticación activado');
