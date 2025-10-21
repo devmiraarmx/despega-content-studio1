@@ -1,13 +1,33 @@
 /* ═════════════════════════════════════════════════════════════
    DESPEGA CONTENT STUDIO - JAVASCRIPT
    Con identidad EME360PRO y preview de imágenes
-   Compatible con Vercel
+   Compatible con Vercel + Sistema de Login
    ═════════════════════════════════════════════════════════════ */
 
 // Detectar entorno (desarrollo o producción)
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000' 
     : '';
+
+// ═══════════════════════════════════════════════════════════════
+// VERIFICAR AUTENTICACIÓN AL CARGAR LA PÁGINA
+// ═══════════════════════════════════════════════════════════════
+(async function checkAuth() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/check-auth`, {
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+            window.location.href = '/login.html';
+        }
+    } catch (error) {
+        console.error('Error al verificar autenticación:', error);
+        window.location.href = '/login.html';
+    }
+})();
 
 // Estado de la aplicación
 const state = {
@@ -147,6 +167,7 @@ async function generarCarrusel() {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 tema: tema,
                 estilo_copy: estiloCopy
@@ -358,6 +379,7 @@ btnRegenerarSlide.addEventListener('click', async () => {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 tema: tema,
                 numero_slide: slideIndex + 1,
@@ -414,6 +436,7 @@ btnRegenerarCopy.addEventListener('click', async () => {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 tema: tema,
                 estilo_copy: estiloCopy,
@@ -537,3 +560,4 @@ btnNuevoCarrusel.addEventListener('click', () => {
 console.log('✅ DESPEGA Content Studio cargado');
 console.log('💙 Con identidad EME360PRO');
 console.log(`🌐 API Base URL: ${API_BASE_URL || 'Producción (mismo dominio)'}`);
+console.log('🔐 Sistema de autenticación activado');

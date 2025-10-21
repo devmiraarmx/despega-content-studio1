@@ -2,7 +2,7 @@
 // DESPEGA CONTENT STUDIO - SERVER
 // Generador de Carruseles con IA para Instagram
 // By: Odiley Vargas - EME360PRO
-// Compatible con Vercel Serverless
+// Compatible con Vercel Serverless + Login
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -12,6 +12,7 @@ import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import session from 'express-session';
 
 // Configuración de rutas para ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -25,8 +26,18 @@ const PORT = process.env.PORT || 3000;
 
 // Middlewares
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Para manejar imágenes base64
-app.use(express.static('public'));
+app.use(express.json({ limit: '50mb' }));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'despega-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+  }
+}));
 
 // Cargar el System Prompt desde archivo
 const systemPromptPath = path.join(__dirname, 'system-prompt-despega.md');
@@ -41,13 +52,114 @@ try {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Generar Carrusel Completo
+// MIDDLEWARE: Verificar autenticación
 // ═══════════════════════════════════════════════════════════════════════════════
-app.post('/api/generar-carrusel', async (req, res) => {
+const requireAuth = (req, res, next) => {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+  
+  // Si es una petición API, devolver 401
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({
+      error: 'No autenticado',
+      detalles: 'Debes iniciar sesión para acceder a esta funcionalidad'
+    });
+  }
+  
+  // Si es página HTML, redirigir a login
+  res.redirect('/login.html');
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Login
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  const validUsername = process.env.LOGIN_USERNAME || 'admin';
+  const validPassword = process.env.LOGIN_PASSWORD || 'despega2024';
+
+  if (username === validUsername && password === validPassword) {
+    req.session.authenticated = true;
+    req.session.username = username;
+    
+    res.json({
+      success: true,
+      message: 'Login exitoso',
+      username: username
+    });
+  } else {
+    res.status(401).json({
+      error: 'Credenciales inválidas',
+      detalles: 'Usuario o contraseña incorrectos'
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Logout
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({
+        error: 'Error al cerrar sesión'
+      });
+    }
+    res.json({
+      success: true,
+      message: 'Sesión cerrada correctamente'
+    });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Verificar sesión
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/check-auth', (req, res) => {
+  if (req.session && req.session.authenticated) {
+    res.json({
+      authenticated: true,
+      username: req.session.username
+    });
+  } else {
+    res.json({
+      authenticated: false
+    });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Servir archivos estáticos públicos (login.html, login.js, login.css)
+// ═══════════════════════════════════════════════════════════════════════════════
+app.use('/login.html', express.static(path.join(__dirname, 'public', 'login.html')));
+app.use('/login.js', express.static(path.join(__dirname, 'public', 'login.js')));
+app.use('/login.css', express.static(path.join(__dirname, 'public', 'login.css')));
+app.use('/styles.css', express.static(path.join(__dirname, 'public', 'styles.css')));
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Proteger la app principal con autenticación
+// ═══════════════════════════════════════════════════════════════════════════════
+app.use('/', (req, res, next) => {
+  // Permitir acceso a login sin autenticación
+  if (req.path === '/login.html' || req.path === '/login.js' || req.path === '/login.css' || req.path === '/styles.css' || req.path.startsWith('/api/login') || req.path === '/api/check-auth') {
+    return next();
+  }
+  
+  // Proteger todo lo demás
+  requireAuth(req, res, next);
+});
+
+app.use(express.static('public'));
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ENDPOINT: Generar Carrusel Completo (PROTEGIDO)
+// ═══════════════════════════════════════════════════════════════════════════════
+app.post('/api/generar-carrusel', requireAuth, async (req, res) => {
   try {
     const { tema, estilo_copy } = req.body;
 
-    // Validaciones
     if (!tema || tema.trim() === '') {
       return res.status(400).json({
         error: 'El tema es requerido',
@@ -72,7 +184,6 @@ app.post('/api/generar-carrusel', async (req, res) => {
     console.log(`\n🎨 Generando carrusel sobre: "${tema}"`);
     console.log(`📝 Estilo de copy: ${estilo_copy}`);
 
-    // Construir el prompt del usuario
     const userPrompt = `
 Genera un carrusel completo de 5 slides sobre el siguiente tema:
 
@@ -91,7 +202,6 @@ INSTRUCCIONES:
 Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt, sin texto adicional antes o después.
 `;
 
-    // Llamar a Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -126,10 +236,8 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
 
     console.log('✅ Respuesta de Claude recibida');
 
-    // Intentar parsear el JSON de la respuesta
     let carruselData;
     try {
-      // Limpiar la respuesta si viene con texto adicional
       const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         carruselData = JSON.parse(jsonMatch[0]);
@@ -165,9 +273,9 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Regenerar Slide Individual
+// ENDPOINT: Regenerar Slide Individual (PROTEGIDO)
 // ═══════════════════════════════════════════════════════════════════════════════
-app.post('/api/regenerar-slide', async (req, res) => {
+app.post('/api/regenerar-slide', requireAuth, async (req, res) => {
   try {
     const { tema, numero_slide, slide_actual, contexto_carrusel } = req.body;
 
@@ -268,9 +376,9 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// ENDPOINT: Regenerar Copy de Instagram
+// ENDPOINT: Regenerar Copy de Instagram (PROTEGIDO)
 // ═══════════════════════════════════════════════════════════════════════════════
-app.post('/api/regenerar-copy', async (req, res) => {
+app.post('/api/regenerar-copy', requireAuth, async (req, res) => {
   try {
     const { tema, estilo_copy, slides_del_carrusel } = req.body;
 
@@ -392,6 +500,7 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`\n✅ Servidor corriendo en: http://localhost:${PORT}`);
     console.log(`📝 System Prompt: ${SYSTEM_PROMPT.length > 100 ? 'Cargado ✅' : 'No cargado ❌'}`);
     console.log(`🔑 API Key: ${process.env.CLAUDE_API_KEY ? 'Configurada ✅' : 'Falta configurar ❌'}`);
+    console.log(`👤 Login: ${process.env.LOGIN_USERNAME || 'admin'} / ${process.env.LOGIN_PASSWORD ? '***' : 'despega2024'}`);
     console.log('\n═══════════════════════════════════════════════════════════════\n');
   });
 }
