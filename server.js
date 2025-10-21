@@ -25,17 +25,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 
-// Session middleware
+// Session middleware - Configuración optimizada para Vercel
 app.use(session({
   secret: process.env.SESSION_SECRET || 'despega-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    secure: true, // Siempre true porque Vercel usa HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+    sameSite: 'lax' // Importante para Vercel
   }
 }));
 
@@ -84,10 +89,20 @@ app.post('/api/login', (req, res) => {
     req.session.authenticated = true;
     req.session.username = username;
     
-    res.json({
-      success: true,
-      message: 'Login exitoso',
-      username: username
+    // Guardar la sesión explícitamente
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error al guardar sesión:', err);
+        return res.status(500).json({
+          error: 'Error al crear sesión'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Login exitoso',
+        username: username
+      });
     });
   } else {
     res.status(401).json({
