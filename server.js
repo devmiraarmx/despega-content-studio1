@@ -2,6 +2,7 @@
 // DESPEGA CONTENT STUDIO - SERVER
 // Generador de Carruseles con IA para Instagram
 // By: Odiley Vargas - EME360PRO
+// Compatible con Vercel Serverless
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -380,17 +381,19 @@ app.get('/api/health', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Servidor
+// Servidor - Solo para desarrollo local
 // ═══════════════════════════════════════════════════════════════════════════════
-app.listen(PORT, () => {
-  console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log('   🚀 DESPEGA CONTENT STUDIO');
-  console.log('   Generador de Carruseles con IA para Instagram');
-  console.log('═══════════════════════════════════════════════════════════════');
-  console.log(`\n✅ Servidor corriendo en: http://localhost:${PORT}`);
-  console.log(`📝 System Prompt: ${SYSTEM_PROMPT.length > 100 ? 'Cargado ✅' : 'No cargado ❌'}`);
-  console.log(`🔑 API Key: ${process.env.CLAUDE_API_KEY ? 'Configurada ✅' : 'Falta configurar ❌'}`);
-  console.log('\n═══════════════════════════════════════════════════════════════\n');
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log('\n═══════════════════════════════════════════════════════════════');
+    console.log('   🚀 DESPEGA CONTENT STUDIO');
+    console.log('   Generador de Carruseles con IA para Instagram');
+    console.log('═══════════════════════════════════════════════════════════════');
+    console.log(`\n✅ Servidor corriendo en: http://localhost:${PORT}`);
+    console.log(`📝 System Prompt: ${SYSTEM_PROMPT.length > 100 ? 'Cargado ✅' : 'No cargado ❌'}`);
+    console.log(`🔑 API Key: ${process.env.CLAUDE_API_KEY ? 'Configurada ✅' : 'Falta configurar ❌'}`);
+    console.log('\n═══════════════════════════════════════════════════════════════\n');
+  });
+}
 
 export default app;
