@@ -1,7 +1,13 @@
 /* ═════════════════════════════════════════════════════════════
    DESPEGA CONTENT STUDIO - JAVASCRIPT
    Con identidad EME360PRO y preview de imágenes
+   Compatible con Vercel
    ═════════════════════════════════════════════════════════════ */
+
+// Detectar entorno (desarrollo o producción)
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : '';
 
 // Estado de la aplicación
 const state = {
@@ -136,7 +142,7 @@ async function generarCarrusel() {
     animateLoadingSteps();
 
     try {
-        const response = await fetch('http://localhost:3000/api/generar-carrusel', {
+        const response = await fetch(`${API_BASE_URL}/api/generar-carrusel`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -347,7 +353,7 @@ btnRegenerarSlide.addEventListener('click', async () => {
     btnRegenerarSlide.textContent = 'Regenerando...';
 
     try {
-        const response = await fetch('http://localhost:3000/api/regenerar-slide', {
+        const response = await fetch(`${API_BASE_URL}/api/regenerar-slide`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -403,7 +409,7 @@ btnRegenerarCopy.addEventListener('click', async () => {
     btnRegenerarCopy.textContent = 'Regenerando...';
 
     try {
-        const response = await fetch('http://localhost:3000/api/regenerar-copy', {
+        const response = await fetch(`${API_BASE_URL}/api/regenerar-copy`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -530,3 +536,4 @@ btnNuevoCarrusel.addEventListener('click', () => {
 
 console.log('✅ DESPEGA Content Studio cargado');
 console.log('💙 Con identidad EME360PRO');
+console.log(`🌐 API Base URL: ${API_BASE_URL || 'Producción (mismo dominio)'}`);
