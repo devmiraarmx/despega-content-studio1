@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DESPEGA Content Studio - Generador de Carruseles con IA</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- HEADER - AZUL CONFIABLE EME360PRO -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🚀</span>
+                <h1 class="logo-text">DESPEGA Content Studio</h1>
+            </div>
+            <p class="header-subtitle">Generador de Carruseles con IA</p>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MAIN APP -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <main class="app-container">
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN: CREACIÓN (Inicial) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section id="creationSection" class="creation-section">
+            <div class="creation-layout">
+                
+                <!-- Panel de Formulario -->
+                <div class="form-panel">
+                    <div class="panel-header">
+                        <h2>Crear Carrusel</h2>
+                        <p>Completa los datos para generar tu contenido</p>
+                    </div>
+
+                    <!-- Upload de Imagen -->
+                    <div class="form-group">
+                        <label class="form-label">Imagen Principal</label>
+                        <div id="uploadZone" class="upload-zone">
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                            
+                            <div id="uploadPlaceholder" class="upload-placeholder">
+                                <div class="upload-icon">📸</div>
+                                <p>Arrastra tu imagen aquí</p>
+                                <span>o haz clic para seleccionar</span>
+                            </div>
+
+                            <div id="uploadPreview" class="upload-preview" style="display: none;">
+                                <img id="previewImage" alt="Preview">
+                                <button id="btnRemoveImage" class="btn-remove">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tema -->
+                    <div class="form-group">
+                        <label class="form-label" for="tema">Tema del Carrusel</label>
+                        <textarea 
+                            id="tema" 
+                            class="form-textarea" 
+                            rows="3" 
+                            placeholder="Ej: Mitos sobre vender en Mercado Libre que frenan a microempresarios"
+                        ></textarea>
+                    </div>
+
+                    <!-- Formato -->
+                    <div class="form-group">
+                        <label class="form-label">Formato</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="formato" value="cuadrado" checked>
+                                <div class="radio-card">
+                                    <span class="radio-icon">⬜</span>
+                                    <div class="radio-label">Cuadrado</div>
+                                    <div class="radio-desc">1:1 (1080×1080)</div>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="formato" value="stories">
+                                <div class="radio-card">
+                                    <span class="radio-icon">📱</span>
+                                    <div class="radio-label">Stories</div>
+                                    <div class="radio-desc">9:16 (1080×1920)</div>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="formato" value="horizontal">
+                                <div class="radio-card">
+                                    <span class="radio-icon">🖼️</span>
+                                    <div class="radio-label">Horizontal</div>
+                                    <div class="radio-desc">1.91:1 (1080×566)</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Estilo de Copy -->
+                    <div class="form-group">
+                        <label class="form-label">Estilo de Copy</label>
+                        <div class="radio-group-vertical">
+                            <label class="radio-option">
+                                <input type="radio" name="estilo_copy" value="completo" checked>
+                                <div class="radio-card">
+                                    <span class="radio-icon">📝</span>
+                                    <div>
+                                        <div class="radio-label">Completo</div>
+                                        <div class="radio-desc">Storytelling, 150-250 palabras, conexión emocional</div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="estilo_copy" value="minimalista">
+                                <div class="radio-card">
+                                    <span class="radio-icon">✨</span>
+                                    <div>
+                                        <div class="radio-label">Minimalista</div>
+                                        <div class="radio-desc">Directo, 80-120 palabras, puntos clave</div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="estilo_copy" value="educativo">
+                                <div class="radio-card">
+                                    <span class="radio-icon">📚</span>
+                                    <div>
+                                        <div class="radio-label">Educativo</div>
+                                        <div class="radio-desc">Profundo, 300-450 palabras, evergreen</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botón Generar -->
+                    <button id="btnGenerar" class="btn-primary">
+                        <span>✨</span>
+                        <span>Generar Carrusel</span>
+                    </button>
+                </div>
+
+                <!-- Panel de Información -->
+                <div class="info-panel">
+                    <div class="info-card">
+                        <div class="info-icon">💡</div>
+                        <h3>¿Cómo funciona?</h3>
+                        <ol class="info-list">
+                            <li>Sube una imagen que represente tu marca</li>
+                            <li>Describe el tema de tu carrusel</li>
+                            <li>Selecciona formato y estilo</li>
+                            <li>¡La IA generará 5 slides profesionales!</li>
+                        </ol>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-icon">🎨</div>
+                        <h3>Incluye:</h3>
+                        <ul class="feature-list">
+                            <li>5 slides optimizados para Instagram</li>
+                            <li>Copy profesional listo para publicar</li>
+                            <li>Diseño con tu identidad de marca</li>
+                            <li>Descarga en alta calidad (PNG)</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN: LOADING -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section id="loadingSection" class="loading-section" style="display: none;">
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <h2 class="loading-title">Generando tu carrusel...</h2>
+                <p class="loading-text">La IA está creando contenido profesional para tu marca</p>
+                
+                <div class="loading-progress">
+                    <div class="progress-step">
+                        <span class="step-icon">🔍</span>
+                        <span class="step-text">Analizando tema</span>
+                    </div>
+                    <div class="progress-step">
+                        <span class="step-icon">🎨</span>
+                        <span class="step-text">Estructurando contenido</span>
+                    </div>
+                    <div class="progress-step">
+                        <span class="step-icon">✨</span>
+                        <span class="step-text">Generando copy</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SECCIÓN: RESULTADOS -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <section id="resultsSection" class="results-section" style="display: none;">
+            <div class="results-layout">
+                
+                <!-- Panel de Preview -->
+                <div class="preview-panel">
+                    <div class="preview-header">
+                        <h2>Vista Previa</h2>
+                        <div class="preview-controls">
+                            <button id="btnPrevSlide" class="btn-icon">←</button>
+                            <span id="slideCounter" class="slide-counter">1 / 5</span>
+                            <button id="btnNextSlide" class="btn-icon">→</button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas del Carrusel -->
+                    <div class="preview-canvas">
+                        <div id="canvasContainer" class="canvas-container">
+                            <div id="slidesContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- Thumbnails -->
+                    <div id="thumbnails" class="thumbnails"></div>
+
+                    <!-- Acciones del Preview -->
+                    <div class="preview-actions">
+                        <button id="btnRegenerarSlide" class="btn-secondary btn-full">
+                            🔄 Regenerar Slide
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel de Contenido -->
+                <div class="content-panel">
+                    
+                    <!-- Copy de Instagram -->
+                    <div class="copy-section">
+                        <div class="section-header">
+                            <h3>Copy de Instagram</h3>
+                            <button id="btnCopyCopy" class="btn-secondary">
+                                📋 Copiar
+                            </button>
+                        </div>
+                        
+                        <div class="copy-box">
+                            <p id="copyContent"></p>
+                        </div>
+
+                        <button id="btnRegenerarCopy" class="btn-outline btn-full">
+                            🔄 Regenerar Copy
+                        </button>
+                    </div>
+
+                    <!-- Descargar -->
+                    <div class="download-section">
+                        <button id="btnDescargar" class="btn-primary">
+                            <span>⬇️</span>
+                            <span>Descargar Carrusel</span>
+                        </button>
+                        <p class="download-info">Se descargarán los 5 slides en PNG</p>
+                    </div>
+
+                    <!-- Nuevo Carrusel -->
+                    <div class="new-section">
+                        <button id="btnNuevoCarrusel" class="btn-outline btn-full">
+                            + Crear Nuevo Carrusel
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- FOOTER -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <footer class="footer">
+        <p><strong>#DESPEGAconOdiley</strong> | Tu experiencia vendiendo vale más que saber de tecnología 🚀</p>
+        <p>by Odiley Vargas - EME360PRO</p>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Scripts -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+
+</body>
+</html>
