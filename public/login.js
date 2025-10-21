@@ -26,6 +26,8 @@ loginForm.addEventListener('submit', async (e) => {
     hideError();
 
     try {
+        console.log('Intentando login con:', { username, passwordLength: password.length });
+        
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: {
@@ -35,20 +37,24 @@ loginForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({ username, password })
         });
 
+        console.log('Response status:', response.status);
+        
         const data = await response.json();
+        console.log('Response data:', data);
 
         if (response.ok && data.success) {
             // Login exitoso - redirigir a la app principal
+            console.log('Login exitoso, redirigiendo...');
             window.location.href = '/';
         } else {
-            showError(data.detalles || 'Credenciales incorrectas');
+            showError(data.detalles || data.error || 'Credenciales incorrectas');
             btnLogin.disabled = false;
             btnLogin.textContent = 'Iniciar Sesión';
         }
 
     } catch (error) {
-        console.error('Error:', error);
-        showError('Error de conexión. Intenta nuevamente.');
+        console.error('Error completo:', error);
+        showError('Error de conexión. Verifica tu internet e intenta nuevamente.');
         btnLogin.disabled = false;
         btnLogin.textContent = 'Iniciar Sesión';
     }
@@ -64,3 +70,4 @@ function hideError() {
 }
 
 console.log('✅ Login page cargada');
+console.log('🌐 API Base URL:', API_BASE_URL || 'Producción (mismo dominio)');
