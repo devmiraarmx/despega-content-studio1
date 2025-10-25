@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
+
+    <!-- Google Fonts - Pares Tipográficos -->
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Open+Sans:wght@400;600&family=Montserrat:wght@700&family=Lato:wght@400;600&family=Poppins:wght@700&family=Roboto:wght@400;500&family=Playfair+Display:wght@700&family=Source+Sans+Pro:wght@400;600&family=Raleway:wght@700&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -242,6 +245,11 @@
                             🔄 Regenerar Slide
                         </button>
                     </div>
+
+                    <!-- Botón Personalizar Diseño (NUEVO) -->
+                    <button id="btnPersonalizar" class="btn-primary btn-full">
+                        ✨ Personalizar diseño
+                    </button>
                 </div>
 
                 <!-- Panel de Contenido -->
@@ -286,6 +294,293 @@
             </div>
         </section>
 
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- MODAL: EDITOR DE DISEÑO -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div id="editorModal" class="editor-modal" style="display: none;">
+            <div class="editor-overlay"></div>
+
+            <div class="editor-container">
+                <!-- Header -->
+                <div class="editor-header">
+                    <h2>✨ Personalizar Carrusel</h2>
+                    <button id="btnCloseEditor" class="btn-icon-close">×</button>
+                </div>
+
+                <!-- Tabs -->
+                <div class="editor-tabs">
+                    <button class="editor-tab active" data-tab="diseno">
+                        <span class="tab-icon">🎨</span>
+                        <span class="tab-text">Diseño</span>
+                        <span class="tab-badge" style="display: none;">•</span>
+                    </button>
+                    <button class="editor-tab" data-tab="contenido">
+                        <span class="tab-icon">✏️</span>
+                        <span class="tab-text">Contenido</span>
+                        <span class="tab-badge" style="display: none;">•</span>
+                    </button>
+                    <button class="editor-tab" data-tab="preview">
+                        <span class="tab-icon">👁️</span>
+                        <span class="tab-text">Preview</span>
+                    </button>
+                </div>
+
+                <!-- Content -->
+                <div class="editor-content">
+
+                    <!-- TAB: DISEÑO -->
+                    <div class="editor-tab-content active" data-content="diseno">
+
+                        <!-- Selector de Tipografía -->
+                        <div class="editor-section">
+                            <label class="editor-label">Tipografía</label>
+                            <select id="fontSelector" class="editor-select">
+                                <option value="pair1">Clásico Confiable (Libre Baskerville + Open Sans)</option>
+                                <option value="pair2">Moderno Accesible (Montserrat + Lato)</option>
+                                <option value="pair3">Tech Amigable (Poppins + Roboto)</option>
+                                <option value="pair4">Elegante Cercano (Playfair Display + Source Sans Pro)</option>
+                                <option value="pair5">Amigable Profesional (Raleway + Nunito)</option>
+                            </select>
+                        </div>
+
+                        <!-- Navegador de Slides -->
+                        <div class="editor-section">
+                            <label class="editor-label">Editando Slide</label>
+                            <div class="slide-navigator">
+                                <button id="btnPrevSlideEditor" class="btn-nav">←</button>
+                                <span id="currentSlideEditor" class="slide-number">Slide 1</span>
+                                <button id="btnNextSlideEditor" class="btn-nav">→</button>
+                            </div>
+                        </div>
+
+                        <!-- Controles para Slides 1-4 -->
+                        <div id="overlayControls" class="editor-section">
+                            <!-- Toggle Overlay -->
+                            <div class="toggle-group">
+                                <label class="toggle-label">
+                                    <input type="checkbox" id="overlayToggle" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-text">Usar overlay en este slide</span>
+                                </label>
+                            </div>
+
+                            <!-- Color Overlay -->
+                            <div id="overlayColorSection">
+                                <label class="editor-label">Color del Overlay</label>
+
+                                <!-- Paleta Predefinida -->
+                                <div class="color-palette">
+                                    <div class="color-swatch" data-color="#2C5F8D" style="background: #2C5F8D;" title="Azul Confiable"></div>
+                                    <div class="color-swatch" data-color="#8B9D77" style="background: #8B9D77;" title="Verde Oliva"></div>
+                                    <div class="color-swatch" data-color="#000000" style="background: #000000;" title="Negro"></div>
+                                    <div class="color-swatch" data-color="#F5F0E8" style="background: #F5F0E8; border: 1px solid #ddd;" title="Crema Suave"></div>
+                                    <div class="color-swatch" data-color="#6B4C9A" style="background: #6B4C9A;" title="Morado Profundo"></div>
+                                    <div class="color-swatch" data-color="#2D5016" style="background: #2D5016;" title="Verde Bosque"></div>
+                                    <div class="color-swatch" data-color="#8B2635" style="background: #8B2635;" title="Granate"></div>
+                                    <div class="color-swatch" data-color="#2C3E50" style="background: #2C3E50;" title="Gris Carbón"></div>
+                                </div>
+
+                                <!-- Color Personalizado -->
+                                <div class="custom-color-group">
+                                    <label class="editor-label-small">Color Personalizado</label>
+                                    <input type="color" id="customOverlayColor" value="#2C5F8D">
+                                </div>
+
+                                <!-- Slider Opacidad -->
+                                <label class="editor-label-small">Opacidad: <span id="opacityValue">60</span>%</label>
+                                <input type="range" id="opacitySlider" min="30" max="90" value="60" class="editor-slider">
+                            </div>
+                        </div>
+
+                        <!-- Controles para Slide 5 -->
+                        <div id="slide5Controls" class="editor-section" style="display: none;">
+                            <label class="editor-label">Color de Fondo (Slide 5)</label>
+                            <div class="color-palette">
+                                <div class="color-swatch" data-color="#F5F0E8" style="background: #F5F0E8; border: 1px solid #ddd;" title="Crema Suave"></div>
+                                <div class="color-swatch" data-color="#FFFFFF" style="background: #FFFFFF; border: 1px solid #ddd;" title="Blanco Puro"></div>
+                                <div class="color-swatch" data-color="#E8F1F8" style="background: #E8F1F8;" title="Azul Hielo"></div>
+                                <div class="color-swatch" data-color="#F0F4ED" style="background: #F0F4ED;" title="Verde Menta"></div>
+                                <div class="color-swatch" data-color="#F7F7F7" style="background: #F7F7F7; border: 1px solid #ddd;" title="Gris Perla"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- TAB: CONTENIDO -->
+                    <div class="editor-tab-content" data-content="contenido">
+
+                        <!-- Navegador de Slides -->
+                        <div class="editor-section">
+                            <label class="editor-label">Editando Slide</label>
+                            <div class="slide-navigator">
+                                <button id="btnPrevSlideContent" class="btn-nav">←</button>
+                                <span id="currentSlideContent" class="slide-number">Slide 1</span>
+                                <button id="btnNextSlideContent" class="btn-nav">→</button>
+                            </div>
+                        </div>
+
+                        <!-- Campos Editables -->
+                        <div id="contentFields" class="editor-section">
+
+                            <!-- Título -->
+                            <div class="field-group">
+                                <label class="editor-label">
+                                    Título
+                                    <span id="titleCounter" class="char-counter">0/60</span>
+                                </label>
+                                <textarea
+                                    id="editTitle"
+                                    class="editor-textarea"
+                                    rows="2"
+                                    maxlength="80"
+                                    placeholder="Título del slide"
+                                ></textarea>
+                            </div>
+
+                            <!-- Texto (para slides 1-4) -->
+                            <div id="textField" class="field-group">
+                                <label class="editor-label">
+                                    Texto
+                                    <span id="textCounter" class="char-counter">0/150</span>
+                                </label>
+                                <textarea
+                                    id="editText"
+                                    class="editor-textarea"
+                                    rows="3"
+                                    maxlength="200"
+                                    placeholder="Texto del slide"
+                                ></textarea>
+                            </div>
+
+                            <!-- Puntos (para slide 5) -->
+                            <div id="puntosField" class="field-group" style="display: none;">
+                                <label class="editor-label">Puntos Clave (3 máximo)</label>
+                                <textarea
+                                    id="editPunto1"
+                                    class="editor-textarea-small"
+                                    rows="1"
+                                    maxlength="80"
+                                    placeholder="✓ Punto 1"
+                                ></textarea>
+                                <textarea
+                                    id="editPunto2"
+                                    class="editor-textarea-small"
+                                    rows="1"
+                                    maxlength="80"
+                                    placeholder="✓ Punto 2"
+                                ></textarea>
+                                <textarea
+                                    id="editPunto3"
+                                    class="editor-textarea-small"
+                                    rows="1"
+                                    maxlength="80"
+                                    placeholder="✓ Punto 3"
+                                ></textarea>
+                            </div>
+
+                            <!-- CTA Button -->
+                            <div id="ctaField" class="field-group">
+                                <label class="editor-label">Botón CTA</label>
+
+                                <input
+                                    id="editCtaText"
+                                    type="text"
+                                    class="editor-input"
+                                    maxlength="25"
+                                    placeholder="Ej: Conoce más"
+                                >
+
+                                <div class="cta-colors">
+                                    <div class="cta-color-item">
+                                        <label class="editor-label-small">Color Fondo</label>
+                                        <input type="color" id="ctaBgColor" value="#8B9D77">
+                                    </div>
+                                    <div class="cta-color-item">
+                                        <label class="editor-label-small">Color Texto</label>
+                                        <input type="color" id="ctaTextColor" value="#FFFFFF">
+                                    </div>
+                                </div>
+
+                                <div class="toggle-group">
+                                    <label class="toggle-label">
+                                        <input type="checkbox" id="ctaBorderToggle">
+                                        <span class="toggle-slider"></span>
+                                        <span class="toggle-text">Agregar borde</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Botón Regenerar -->
+                        <button id="btnRegenText" class="btn-secondary btn-full">
+                            🔄 Regenerar texto con IA
+                        </button>
+
+                    </div>
+
+                    <!-- TAB: PREVIEW -->
+                    <div class="editor-tab-content" data-content="preview">
+                        <div class="editor-preview">
+                            <div id="editorPreviewSlide" class="preview-slide-mini"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="editor-footer">
+                    <button id="btnCancelar" class="btn-outline">❌ Cancelar</button>
+                    <button id="btnAplicar" class="btn-primary">✅ Aplicar cambios</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- MODAL: REGENERAR TEXTO CON IA -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div id="regenModal" class="regen-modal" style="display: none;">
+            <div class="regen-overlay"></div>
+
+            <div class="regen-container">
+                <h3>🔄 Regenerar texto del <span id="regenSlideNumber">Slide 1</span></h3>
+
+                <label class="editor-label">¿Qué quieres ajustar?</label>
+                <textarea
+                    id="regenInstructions"
+                    class="editor-textarea"
+                    rows="3"
+                    placeholder="Ej: Hazlo más corto, enfócate en beneficios..."
+                ></textarea>
+
+                <div class="regen-options">
+                    <p class="editor-label-small">Opciones rápidas:</p>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="Más corto">
+                        <span>Más corto</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="Más directo">
+                        <span>Más directo</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="Más empático">
+                        <span>Más empático</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" value="Agregar emoji">
+                        <span>Agregar emoji</span>
+                    </label>
+                </div>
+
+                <div class="regen-footer">
+                    <button id="btnCancelRegen" class="btn-outline">Cancelar</button>
+                    <button id="btnConfirmRegen" class="btn-primary">🔄 Regenerar</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -301,6 +596,7 @@
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="script.js"></script>
+    <script src="editor.js"></script>
 
 </body>
 </html>
