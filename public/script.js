@@ -153,6 +153,29 @@ function resetUpload() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// HELPER: Fetch con timeout
+// ═══════════════════════════════════════════════════════════════
+async function fetchConTimeout(url, options, timeout = 30000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('⏱️ La generación tardó demasiado. Intenta con un tema más simple.');
+    }
+    throw error;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SECCIÓN 2: GENERACIÓN DE CARRUSEL
 // ═══════════════════════════════════════════════════════════════
 
@@ -197,7 +220,7 @@ async function generarCarrusel() {
     animateLoadingSteps();
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/generar-carrusel`, {
+        const response = await fetchConTimeout(`${API_BASE_URL}/api/generar-carrusel`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({
@@ -217,7 +240,7 @@ async function generarCarrusel() {
         }
 
         const data = await response.json();
-        
+
         // Guardar en estado
         state.carrusel = data.carrusel;
         state.copy = data.copy_instagram;
@@ -225,14 +248,30 @@ async function generarCarrusel() {
 
         // Renderizar resultados
         renderizarCarrusel(formato);
-        
+
         // Mostrar resultados
         loadingSection.style.display = 'none';
         resultsSection.style.display = 'block';
 
     } catch (error) {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
+        console.error('Error completo:', error);
+
+        // Mostrar error amigable
+        let mensajeUsuario = '❌ Hubo un problema al generar el carrusel.\n\n';
+
+        if (error.message && error.message.includes('JSON')) {
+            mensajeUsuario += '🔄 La IA devolvió un formato inesperado.\n';
+            mensajeUsuario += '💡 Solución: Intenta generar de nuevo.';
+        } else if (error.message && error.message.includes('API')) {
+            mensajeUsuario += '🌐 Problema de conexión con la IA.\n';
+            mensajeUsuario += '💡 Solución: Verifica tu conexión e intenta en un momento.';
+        } else {
+            mensajeUsuario += `📝 Detalle: ${error.message}\n`;
+            mensajeUsuario += '💡 Solución: Recarga la página e intenta nuevamente.';
+        }
+
+        alert(mensajeUsuario);
+
         loadingSection.style.display = 'none';
         creationSection.style.display = 'block';
     }

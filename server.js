@@ -21,6 +21,43 @@ const __dirname = path.dirname(__filename);
 // Cargar variables de entorno
 dotenv.config();
 
+// ═══════════════════════════════════════════════════════════════
+// HELPER: Extraer JSON limpio de respuesta de Claude
+// ═══════════════════════════════════════════════════════════════
+function extraerJSON(contenido) {
+  try {
+    // Intento 1: Parsear directamente
+    return JSON.parse(contenido);
+  } catch (e) {
+    // Intento 2: Buscar JSON entre marcadores de código
+    const codeBlockMatch = contenido.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (codeBlockMatch) {
+      try {
+        return JSON.parse(codeBlockMatch[1]);
+      } catch (e2) {}
+    }
+
+    // Intento 3: Buscar primer objeto JSON válido
+    const jsonMatch = contenido.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0]);
+      } catch (e3) {}
+    }
+
+    // Intento 4: Limpiar texto antes/después y parsear
+    const limpio = contenido
+      .replace(/^[^{]*/, '') // Quitar texto antes del primer {
+      .replace(/[^}]*$/, ''); // Quitar texto después del último }
+
+    try {
+      return JSON.parse(limpio);
+    } catch (e4) {
+      throw new Error('No se pudo extraer JSON válido');
+    }
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-in-production';
@@ -196,6 +233,8 @@ INSTRUCCIONES:
 6. Conecta el contenido con la audiencia de microempresarios en Mercado Libre
 
 Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt, sin texto adicional antes o después.
+
+CRÍTICO: Tu respuesta debe ser ÚNICAMENTE el objeto JSON, sin ningún texto adicional antes ni después. No incluyas explicaciones, comentarios, ni bloques de código markdown. Solo el JSON puro empezando con { y terminando con }.
 `;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -206,7 +245,7 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 3000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -230,22 +269,22 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
     const data = await response.json();
     const contenidoGenerado = data.content[0].text;
 
-    console.log('✅ Respuesta de Claude recibida');
+    // Log para debugging
+    console.log('📊 Respuesta de Claude (primeros 300 chars):', contenidoGenerado.substring(0, 300));
+    console.log('📊 Longitud total:', contenidoGenerado.length);
+    console.log('📊 Primeros 50 chars:', contenidoGenerado.substring(0, 50));
+    console.log('📊 Últimos 50 chars:', contenidoGenerado.substring(contenidoGenerado.length - 50));
 
     let carruselData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        carruselData = JSON.parse(jsonMatch[0]);
-      } else {
-        carruselData = JSON.parse(contenidoGenerado);
-      }
+      carruselData = extraerJSON(contenidoGenerado);
     } catch (parseError) {
       console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido:', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
         error: 'Error al procesar la respuesta de la IA',
         detalles: 'La respuesta no está en formato JSON válido',
-        contenido_raw: contenidoGenerado
+        contenido_preview: contenidoGenerado.substring(0, 200)
       });
     }
 
@@ -260,10 +299,31 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
     });
 
   } catch (error) {
-    console.error('❌ Error general:', error);
+    console.error('❌ Error completo:', error);
+
+    // Error específico de la API de Claude
+    if (error.message && error.message.includes('API')) {
+      return res.status(503).json({
+        error: 'Error de comunicación con la IA',
+        detalles: 'No se pudo conectar con Claude API. Verifica tu API Key y conexión.',
+        sugerencia: 'Intenta nuevamente en unos segundos'
+      });
+    }
+
+    // Error de parsing
+    if (error.message && error.message.includes('JSON')) {
+      return res.status(500).json({
+        error: 'Error al procesar contenido',
+        detalles: 'La IA generó contenido en formato incorrecto. Intenta regenerar.',
+        sugerencia: 'Click en "Regenerar" para intentar de nuevo'
+      });
+    }
+
+    // Error genérico
     res.status(500).json({
-      error: 'Error interno del servidor',
-      detalles: error.message
+      error: 'Error inesperado',
+      detalles: error.message || 'Error desconocido',
+      sugerencia: 'Recarga la página e intenta nuevamente'
     });
   }
 });
@@ -307,6 +367,8 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
   "titulo": "...",
   "texto": "..." o "puntos": [...] para slide 5
 }
+
+CRÍTICO: Tu respuesta debe ser ÚNICAMENTE el objeto JSON, sin ningún texto adicional antes ni después. No incluyas explicaciones, comentarios, ni bloques de código markdown. Solo el JSON puro empezando con { y terminando con }.
 `;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -317,7 +379,7 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -340,18 +402,22 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
     const data = await response.json();
     const contenidoGenerado = data.content[0].text;
 
+    // Log para debugging
+    console.log('📊 Respuesta de Claude (primeros 300 chars):', contenidoGenerado.substring(0, 300));
+    console.log('📊 Longitud total:', contenidoGenerado.length);
+    console.log('📊 Primeros 50 chars:', contenidoGenerado.substring(0, 50));
+    console.log('📊 Últimos 50 chars:', contenidoGenerado.substring(contenidoGenerado.length - 50));
+
     let slideData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        slideData = JSON.parse(jsonMatch[0]);
-      } else {
-        slideData = JSON.parse(contenidoGenerado);
-      }
+      slideData = extraerJSON(contenidoGenerado);
     } catch (parseError) {
+      console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido:', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
-        error: 'Error al procesar slide regenerado',
-        contenido_raw: contenidoGenerado
+        error: 'Error al procesar la respuesta de la IA',
+        detalles: 'La respuesta no está en formato JSON válido',
+        contenido_preview: contenidoGenerado.substring(0, 200)
       });
     }
 
@@ -364,10 +430,31 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
     });
 
   } catch (error) {
-    console.error('❌ Error al regenerar slide:', error);
+    console.error('❌ Error completo:', error);
+
+    // Error específico de la API de Claude
+    if (error.message && error.message.includes('API')) {
+      return res.status(503).json({
+        error: 'Error de comunicación con la IA',
+        detalles: 'No se pudo conectar con Claude API. Verifica tu API Key y conexión.',
+        sugerencia: 'Intenta nuevamente en unos segundos'
+      });
+    }
+
+    // Error de parsing
+    if (error.message && error.message.includes('JSON')) {
+      return res.status(500).json({
+        error: 'Error al procesar contenido',
+        detalles: 'La IA generó contenido en formato incorrecto. Intenta regenerar.',
+        sugerencia: 'Click en "Regenerar" para intentar de nuevo'
+      });
+    }
+
+    // Error genérico
     res.status(500).json({
-      error: 'Error interno del servidor',
-      detalles: error.message
+      error: 'Error inesperado',
+      detalles: error.message || 'Error desconocido',
+      sugerencia: 'Recarga la página e intenta nuevamente'
     });
   }
 });
@@ -408,6 +495,8 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
   "estilo": "${estilo_copy}",
   "contenido": "Copy completo aquí..."
 }
+
+CRÍTICO: Tu respuesta debe ser ÚNICAMENTE el objeto JSON, sin ningún texto adicional antes ni después. No incluyas explicaciones, comentarios, ni bloques de código markdown. Solo el JSON puro empezando con { y terminando con }.
 `;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -418,7 +507,7 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -441,18 +530,22 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
     const data = await response.json();
     const contenidoGenerado = data.content[0].text;
 
+    // Log para debugging
+    console.log('📊 Respuesta de Claude (primeros 300 chars):', contenidoGenerado.substring(0, 300));
+    console.log('📊 Longitud total:', contenidoGenerado.length);
+    console.log('📊 Primeros 50 chars:', contenidoGenerado.substring(0, 50));
+    console.log('📊 Últimos 50 chars:', contenidoGenerado.substring(contenidoGenerado.length - 50));
+
     let copyData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        copyData = JSON.parse(jsonMatch[0]);
-      } else {
-        copyData = JSON.parse(contenidoGenerado);
-      }
+      copyData = extraerJSON(contenidoGenerado);
     } catch (parseError) {
+      console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido:', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
-        error: 'Error al procesar copy regenerado',
-        contenido_raw: contenidoGenerado
+        error: 'Error al procesar la respuesta de la IA',
+        detalles: 'La respuesta no está en formato JSON válido',
+        contenido_preview: contenidoGenerado.substring(0, 200)
       });
     }
 
@@ -465,10 +558,31 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
     });
 
   } catch (error) {
-    console.error('❌ Error al regenerar copy:', error);
+    console.error('❌ Error completo:', error);
+
+    // Error específico de la API de Claude
+    if (error.message && error.message.includes('API')) {
+      return res.status(503).json({
+        error: 'Error de comunicación con la IA',
+        detalles: 'No se pudo conectar con Claude API. Verifica tu API Key y conexión.',
+        sugerencia: 'Intenta nuevamente en unos segundos'
+      });
+    }
+
+    // Error de parsing
+    if (error.message && error.message.includes('JSON')) {
+      return res.status(500).json({
+        error: 'Error al procesar contenido',
+        detalles: 'La IA generó contenido en formato incorrecto. Intenta regenerar.',
+        sugerencia: 'Click en "Regenerar" para intentar de nuevo'
+      });
+    }
+
+    // Error genérico
     res.status(500).json({
-      error: 'Error interno del servidor',
-      detalles: error.message
+      error: 'Error inesperado',
+      detalles: error.message || 'Error desconocido',
+      sugerencia: 'Recarga la página e intenta nuevamente'
     });
   }
 });
