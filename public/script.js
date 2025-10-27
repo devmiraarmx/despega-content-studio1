@@ -51,6 +51,7 @@ const state = {
     carrusel: null,
     copy: null,
     slideActual: 0,
+    formato: null, // 'cuadrado', 'stories', o 'horizontal'
     preferencias: {
         tipografia: 'clasico',
         overlayColor: '#2C5F8D',
@@ -269,7 +270,10 @@ function animateLoadingSteps() {
 function renderizarCarrusel(formato) {
     const container = document.querySelector('.canvas-container');
     const copyContent = document.getElementById('copyContent');
-    
+
+    // Guardar formato en el estado
+    state.formato = formato;
+
     // Limpiar contenedor
     container.innerHTML = '';
     
