@@ -857,24 +857,41 @@ const btnGuardarCambios = document.getElementById('btnGuardarCambios');
 // Guardar cambios de texto
 btnGuardarCambios.addEventListener('click', () => {
     const slideIndex = state.slideActual;
-    
+
     // Actualizar estado
     state.carrusel.slides[slideIndex].titulo = editTituloInput.value;
     state.carrusel.slides[slideIndex].texto = editTextoInput.value;
-    
+
     // Slides 1-4 usan cta_button, Slide 5 usa cta
     if (slideIndex < 4) {
         state.carrusel.slides[slideIndex].cta_button = editCtaInput.value;
     } else {
         state.carrusel.slides[slideIndex].cta = editCtaInput.value;
     }
-    
+
     // Actualizar slide visual
     const slideElement = document.querySelector(`.slide[data-index="${slideIndex}"]`);
     if (slideElement) {
         slideElement.querySelector('.slide-title').textContent = editTituloInput.value;
-        slideElement.querySelector('.slide-text').textContent = editTextoInput.value;
-        
+
+        // Slide 5 es especial: no tiene .slide-text, sino .puntos-container
+        if (slideIndex === 4) {
+            // Para slide 5, re-renderizar es más fácil que actualizar manualmente
+            const formato = document.querySelector('.canvas-container').classList.contains('formato-stories')
+                ? 'stories'
+                : document.querySelector('.canvas-container').classList.contains('formato-horizontal')
+                ? 'horizontal'
+                : 'cuadrado';
+            renderizarCarrusel(formato);
+            cambiarSlide(slideIndex);
+        } else {
+            // Slides 1-4 tienen .slide-text
+            const slideTextElement = slideElement.querySelector('.slide-text');
+            if (slideTextElement) {
+                slideTextElement.textContent = editTextoInput.value;
+            }
+        }
+
         const ctaElement = slideElement.querySelector('.slide-cta');
         const ctaValue = editCtaInput.value || 'Envía DM 🚀'; // CTA por defecto
         if (ctaElement) {
@@ -883,15 +900,18 @@ btnGuardarCambios.addEventListener('click', () => {
             const newCta = document.createElement('div');
             newCta.className = 'slide-cta';
             newCta.textContent = ctaValue;
-            slideElement.querySelector('.slide-content').appendChild(newCta);
+            const contentElement = slideElement.querySelector('.slide-content') || slideElement.querySelector('.slide-content-resumen');
+            if (contentElement) {
+                contentElement.appendChild(newCta);
+            }
         }
     }
-    
+
     // Feedback visual
     const originalText = btnGuardarCambios.textContent;
     btnGuardarCambios.textContent = '✓ Guardado';
     btnGuardarCambios.style.background = '#8B9D77';
-    
+
     setTimeout(() => {
         btnGuardarCambios.textContent = originalText;
         btnGuardarCambios.style.background = '';
