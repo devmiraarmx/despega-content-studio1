@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DESPEGA Content Studio - Generador de Carruseles con IA</title>
     
-    <!-- Google Fonts -->
+    <!-- Google Fonts - 5 PARES DE TIPOGRAFÍAS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Libre+Baskerville:wght@400;700&family=Open+Sans:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Sans+Pro:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
     <link rel="stylesheet" href="styles.css">
@@ -149,35 +149,10 @@
                     </div>
 
                     <!-- Botón Generar -->
-                    <button id="btnGenerar" class="btn-primary">
-                        <span>✨</span>
-                        <span>Generar Carrusel</span>
+                    <button id="btnGenerar" class="btn-primary btn-large">
+                        <span class="btn-icon">✨</span>
+                        <span>Generar con IA</span>
                     </button>
-                </div>
-
-                <!-- Panel de Información -->
-                <div class="info-panel">
-                    <div class="info-card">
-                        <div class="info-icon">💡</div>
-                        <h3>¿Cómo funciona?</h3>
-                        <ol class="info-list">
-                            <li>Sube una imagen que represente tu marca</li>
-                            <li>Describe el tema de tu carrusel</li>
-                            <li>Selecciona formato y estilo</li>
-                            <li>¡La IA generará 5 slides profesionales!</li>
-                        </ol>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="info-icon">🎨</div>
-                        <h3>Incluye:</h3>
-                        <ul class="feature-list">
-                            <li>5 slides optimizados para Instagram</li>
-                            <li>Copy profesional listo para publicar</li>
-                            <li>Diseño con tu identidad de marca</li>
-                            <li>Descarga en alta calidad (PNG)</li>
-                        </ul>
-                    </div>
                 </div>
 
             </div>
@@ -189,21 +164,23 @@
         <section id="loadingSection" class="loading-section" style="display: none;">
             <div class="loading-container">
                 <div class="loading-spinner"></div>
-                <h2 class="loading-title">Generando tu carrusel...</h2>
-                <p class="loading-text">La IA está creando contenido profesional para tu marca</p>
-                
-                <div class="loading-progress">
+                <h2 class="loading-title">Creando tu carrusel...</h2>
+                <div class="progress-steps">
                     <div class="progress-step">
-                        <span class="step-icon">🔍</span>
-                        <span class="step-text">Analizando tema</span>
+                        <div class="step-icon">🔍</div>
+                        <div class="step-text">Analizando contenido</div>
                     </div>
                     <div class="progress-step">
-                        <span class="step-icon">🎨</span>
-                        <span class="step-text">Estructurando contenido</span>
+                        <div class="step-icon">✍️</div>
+                        <div class="step-text">Generando textos</div>
                     </div>
                     <div class="progress-step">
-                        <span class="step-icon">✨</span>
-                        <span class="step-text">Generando copy</span>
+                        <div class="step-icon">🎨</div>
+                        <div class="step-text">Diseñando slides</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-icon">📝</div>
+                        <div class="step-text">Creando copy</div>
                     </div>
                 </div>
             </div>
@@ -215,72 +192,65 @@
         <section id="resultsSection" class="results-section" style="display: none;">
             <div class="results-layout">
                 
-                <!-- Panel de Preview -->
-                <div class="preview-panel">
-                    <div class="preview-header">
-                        <h2>Vista Previa</h2>
-                        <div class="preview-controls">
-                            <button id="btnPrevSlide" class="btn-icon">←</button>
-                            <span id="slideCounter" class="slide-counter">1 / 5</span>
-                            <button id="btnNextSlide" class="btn-icon">→</button>
+                <!-- Panel Izquierdo: Canvas -->
+                <div class="canvas-panel">
+                    <div class="canvas-header">
+                        <h2>Preview del Carrusel</h2>
+                        <div class="canvas-actions">
+                            <!-- BOTÓN NUEVO: Editar Diseño -->
+                            <button id="btnEditarDiseno" class="btn-secondary">
+                                ✏️ Editar Diseño
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Canvas del Carrusel -->
-                    <div class="preview-canvas">
-                        <div id="canvasContainer" class="canvas-container">
-                            <div id="slidesContainer"></div>
-                        </div>
+                    <!-- Canvas Container -->
+                    <div class="canvas-container formato-cuadrado">
+                        <!-- Los slides se generan dinámicamente aquí -->
                     </div>
 
-                    <!-- Thumbnails -->
-                    <div id="thumbnails" class="thumbnails"></div>
-
-                    <!-- Acciones del Preview -->
-                    <div class="preview-actions">
-                        <button id="btnRegenerarSlide" class="btn-secondary btn-full">
-                            🔄 Regenerar Slide
+                    <!-- Navegación de Slides -->
+                    <div class="slide-navigation">
+                        <button id="btnPrevSlide" class="nav-btn">
+                            <span>←</span>
+                        </button>
+                        <div class="slide-counter" id="slideCounter">1 / 5</div>
+                        <button id="btnNextSlide" class="nav-btn">
+                            <span>→</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Panel de Contenido -->
-                <div class="content-panel">
-                    
+                <!-- Panel Derecho: Copy y Acciones -->
+                <div class="copy-panel">
                     <!-- Copy de Instagram -->
                     <div class="copy-section">
                         <div class="section-header">
-                            <h3>Copy de Instagram</h3>
-                            <button id="btnCopyCopy" class="btn-secondary">
-                                📋 Copiar
+                            <h3>Copy para Instagram</h3>
+                            <button id="btnCopyCopy" class="btn-icon-small" title="Copiar">
+                                📋
                             </button>
                         </div>
-                        
-                        <div class="copy-box">
-                            <p id="copyContent"></p>
+                        <div id="copyContent" class="copy-content">
+                            <!-- Copy se genera aquí -->
                         </div>
+                    </div>
 
+                    <!-- Acciones -->
+                    <div class="actions-section">
+                        <button id="btnRegenerarSlide" class="btn-outline btn-full">
+                            🔄 Regenerar Slide
+                        </button>
                         <button id="btnRegenerarCopy" class="btn-outline btn-full">
                             🔄 Regenerar Copy
                         </button>
-                    </div>
-
-                    <!-- Descargar -->
-                    <div class="download-section">
-                        <button id="btnDescargar" class="btn-primary">
-                            <span>⬇️</span>
-                            <span>Descargar Carrusel</span>
+                        <button id="btnDescargar" class="btn-primary btn-full">
+                            ⬇️ Descargar Carrusel
                         </button>
-                        <p class="download-info">Se descargarán los 5 slides en PNG</p>
-                    </div>
-
-                    <!-- Nuevo Carrusel -->
-                    <div class="new-section">
                         <button id="btnNuevoCarrusel" class="btn-outline btn-full">
-                            + Crear Nuevo Carrusel
+                            ➕ Nuevo Carrusel
                         </button>
                     </div>
-
                 </div>
 
             </div>
@@ -289,10 +259,156 @@
     </main>
 
     <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- MODAL DE EDICIÓN -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div id="editModal" class="edit-modal">
+        <div class="modal-content">
+            
+            <!-- Header del Modal -->
+            <div class="modal-header">
+                <h2>Editar Carrusel</h2>
+                <button id="btnCloseModal" class="btn-close">×</button>
+            </div>
+
+            <!-- Tabs del Modal -->
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="diseno">🎨 Diseño</button>
+                <button class="modal-tab" data-tab="contenido">📝 Contenido</button>
+                <button class="modal-tab" data-tab="preview">👁️ Preview</button>
+            </div>
+
+            <!-- Contenido de los Tabs -->
+            <div class="modal-body">
+
+                <!-- TAB: DISEÑO -->
+                <div id="tab-diseno" class="tab-pane active">
+                    
+                    <!-- Selector de Tipografías -->
+                    <div class="editor-section">
+                        <label class="editor-label">Tipografía:</label>
+                        <div class="tipografia-grid">
+                            
+                            <div class="tipografia-option selected" data-tipografia="clasico">
+                                <div class="tipografia-preview tipografia-clasico">
+                                    <div class="preview-title">Título Clásico</div>
+                                    <div class="preview-text">Texto elegante</div>
+                                </div>
+                                <div class="tipografia-name">Clásico</div>
+                                <div class="tipografia-fonts">Libre Baskerville + Open Sans</div>
+                            </div>
+
+                            <div class="tipografia-option" data-tipografia="moderno">
+                                <div class="tipografia-preview tipografia-moderno">
+                                    <div class="preview-title">Título Moderno</div>
+                                    <div class="preview-text">Texto limpio</div>
+                                </div>
+                                <div class="tipografia-name">Moderno</div>
+                                <div class="tipografia-fonts">Montserrat + Lato</div>
+                            </div>
+
+                            <div class="tipografia-option" data-tipografia="bold">
+                                <div class="tipografia-preview tipografia-bold">
+                                    <div class="preview-title">Título Bold</div>
+                                    <div class="preview-text">Texto impactante</div>
+                                </div>
+                                <div class="tipografia-name">Bold</div>
+                                <div class="tipografia-fonts">Poppins + Inter</div>
+                            </div>
+
+                            <div class="tipografia-option" data-tipografia="elegante">
+                                <div class="tipografia-preview tipografia-elegante">
+                                    <div class="preview-title">Título Elegante</div>
+                                    <div class="preview-text">Texto sofisticado</div>
+                                </div>
+                                <div class="tipografia-name">Elegante</div>
+                                <div class="tipografia-fonts">Playfair + Source Sans</div>
+                            </div>
+
+                            <div class="tipografia-option" data-tipografia="tech">
+                                <div class="tipografia-preview tipografia-tech">
+                                    <div class="preview-title">Título Tech</div>
+                                    <div class="preview-text">Texto contemporáneo</div>
+                                </div>
+                                <div class="tipografia-name">Tech</div>
+                                <div class="tipografia-fonts">Raleway + Nunito</div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Controles de Overlay -->
+                    <div class="editor-section">
+                        <label class="editor-label">
+                            <input type="checkbox" id="overlayToggle" checked>
+                            Activar overlay de color
+                        </label>
+                    </div>
+
+                    <div class="editor-section">
+                        <label class="editor-label">Color del overlay:</label>
+                        <input type="color" id="overlayColorPicker" value="#2C5F8D" class="color-picker">
+                    </div>
+
+                    <div class="editor-section">
+                        <label class="editor-label">
+                            Opacidad: <span id="overlayOpacityValue">70%</span>
+                        </label>
+                        <input type="range" id="overlayOpacitySlider" min="0" max="1" step="0.05" value="0.7" class="opacity-slider">
+                    </div>
+
+                    <div class="editor-section">
+                        <button id="aplicarATodos" class="btn-secondary btn-full">
+                            Aplicar a todos los slides
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- TAB: CONTENIDO -->
+                <div id="tab-contenido" class="tab-pane">
+                    
+                    <div class="editor-section">
+                        <label class="editor-label">Título:</label>
+                        <input type="text" id="editTitulo" class="editor-input" placeholder="Título del slide">
+                    </div>
+
+                    <div class="editor-section">
+                        <label class="editor-label">Texto:</label>
+                        <textarea id="editTexto" class="editor-textarea" rows="4" placeholder="Texto del slide"></textarea>
+                    </div>
+
+                    <div class="editor-section">
+                        <label class="editor-label">CTA (opcional):</label>
+                        <input type="text" id="editCta" class="editor-input" placeholder="Ej: Agenda tu sesión">
+                    </div>
+
+                    <div class="editor-section">
+                        <button id="btnGuardarCambios" class="btn-primary btn-full">
+                            💾 Guardar Cambios
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- TAB: PREVIEW -->
+                <div id="tab-preview" class="tab-pane">
+                    <div class="preview-container">
+                        <p style="text-align: center; color: #666; margin-top: 40px;">
+                            Vista previa en tiempo real del slide actual con tus cambios aplicados.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
     <!-- FOOTER -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <footer class="footer">
-        <p><strong>#DESPEGAconOdiley</strong> | Tu experiencia vendiendo vale más que saber de tecnología 🚀</p>
+        <p><strong>#DESPEGAconODILEY🚀</strong> | Tu experiencia vendiendo vale más que saber de tecnología 🚀</p>
         <p>by Odiley Vargas - EME360PRO</p>
     </footer>
 

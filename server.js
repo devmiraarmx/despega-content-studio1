@@ -3,6 +3,7 @@
 // Generador de Carruseles con IA para Instagram
 // By: Odiley Vargas - EME360PRO
 // Optimizado para Vercel Serverless con JWT Authentication
+// FASE 1: Modelo Claude 3.5 Sonnet + Parsing mejorado
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import express from 'express';
@@ -206,7 +207,7 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 3000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -234,18 +235,27 @@ Responde ÚNICAMENTE con el JSON en el formato especificado en el system prompt,
 
     let carruselData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
+      // Limpiar contenido antes de parsear
+      let contenidoLimpio = contenidoGenerado
+        .replace(/```json\n?/g, '')   // Quitar markdown de código JSON
+        .replace(/```\n?/g, '')        // Quitar bloques de código
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Quitar caracteres de control
+        .trim();                        // Quitar espacios
+      
+      // Extraer JSON
+      const jsonMatch = contenidoLimpio.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         carruselData = JSON.parse(jsonMatch[0]);
       } else {
-        carruselData = JSON.parse(contenidoGenerado);
+        carruselData = JSON.parse(contenidoLimpio);
       }
     } catch (parseError) {
       console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido (primeros 500 caracteres):', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
         error: 'Error al procesar la respuesta de la IA',
         detalles: 'La respuesta no está en formato JSON válido',
-        contenido_raw: contenidoGenerado
+        contenido_raw: contenidoGenerado.substring(0, 1000)
       });
     }
 
@@ -317,7 +327,7 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -342,16 +352,26 @@ Responde ÚNICAMENTE con el JSON del slide, sin texto adicional:
 
     let slideData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
+      // Limpiar contenido antes de parsear
+      let contenidoLimpio = contenidoGenerado
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Quitar caracteres de control
+        .trim();
+      
+      const jsonMatch = contenidoLimpio.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         slideData = JSON.parse(jsonMatch[0]);
       } else {
-        slideData = JSON.parse(contenidoGenerado);
+        slideData = JSON.parse(contenidoLimpio);
       }
     } catch (parseError) {
+      console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido:', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
         error: 'Error al procesar slide regenerado',
-        contenido_raw: contenidoGenerado
+        detalles: 'Respuesta de IA no válida',
+        contenido_raw: contenidoGenerado.substring(0, 1000)
       });
     }
 
@@ -418,7 +438,7 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 2000,
         system: SYSTEM_PROMPT,
         messages: [
@@ -443,16 +463,26 @@ Responde ÚNICAMENTE con el JSON del copy, sin texto adicional:
 
     let copyData;
     try {
-      const jsonMatch = contenidoGenerado.match(/\{[\s\S]*\}/);
+      // Limpiar contenido antes de parsear
+      let contenidoLimpio = contenidoGenerado
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Quitar caracteres de control
+        .trim();
+      
+      const jsonMatch = contenidoLimpio.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         copyData = JSON.parse(jsonMatch[0]);
       } else {
-        copyData = JSON.parse(contenidoGenerado);
+        copyData = JSON.parse(contenidoLimpio);
       }
     } catch (parseError) {
+      console.error('❌ Error al parsear JSON:', parseError);
+      console.error('📄 Contenido recibido:', contenidoGenerado.substring(0, 500));
       return res.status(500).json({
         error: 'Error al procesar copy regenerado',
-        contenido_raw: contenidoGenerado
+        detalles: 'Respuesta de IA no válida',
+        contenido_raw: contenidoGenerado.substring(0, 1000)
       });
     }
 
@@ -480,7 +510,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
     service: 'DESPEGA Content Studio',
-    version: '1.0.1-jwt',
+    version: '1.0.3-claude3.5-fixed',
     system_prompt_loaded: SYSTEM_PROMPT.length > 100,
     timestamp: new Date().toISOString()
   });
@@ -495,6 +525,7 @@ if (process.env.NODE_ENV !== 'production') {
     console.log('   🚀 DESPEGA CONTENT STUDIO');
     console.log('   Generador de Carruseles con IA para Instagram');
     console.log('   🔐 Con autenticación JWT');
+    console.log('   💰 Claude 3.5 Sonnet (60% más económico)');
     console.log('═══════════════════════════════════════════════════════════════');
     console.log(`\n✅ Servidor corriendo en: http://localhost:${PORT}`);
     console.log(`📝 System Prompt: ${SYSTEM_PROMPT.length > 100 ? 'Cargado ✅' : 'No cargado ❌'}`);

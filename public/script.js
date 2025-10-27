@@ -50,7 +50,13 @@ const state = {
     nombreImagen: null,
     carrusel: null,
     copy: null,
-    slideActual: 0
+    slideActual: 0,
+    preferencias: {
+        tipografia: 'clasico',
+        overlayColor: '#2C5F8D',
+        overlayOpacity: 0.7,
+        overlayPorSlide: {} // { slideIndex: { enabled: true, color: '#...', opacity: 0.7 } }
+    }
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -223,6 +229,9 @@ async function generarCarrusel() {
         state.copy = data.copy_instagram;
         state.slideActual = 0;
 
+        // Cargar preferencias guardadas
+        cargarPreferencias();
+
         // Renderizar resultados
         renderizarCarrusel(formato);
         
@@ -241,90 +250,121 @@ async function generarCarrusel() {
 // Animar steps del loading
 function animateLoadingSteps() {
     const steps = document.querySelectorAll('.progress-step');
-    steps.forEach(step => step.classList.remove('active'));
-
-    steps[0].classList.add('active');
-    setTimeout(() => {
-        steps[1].classList.add('active');
-    }, 1500);
-    setTimeout(() => {
-        steps[2].classList.add('active');
-    }, 3000);
+    let currentStep = 0;
+    
+    const interval = setInterval(() => {
+        if (currentStep < steps.length) {
+            steps[currentStep].classList.add('active');
+            currentStep++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 2000);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SECCIÓN 3: RENDERIZADO DE SLIDES
+// SECCIÓN 3: RENDERIZAR CARRUSEL
 // ═══════════════════════════════════════════════════════════════
 
 function renderizarCarrusel(formato) {
-    const canvasContainer = document.getElementById('canvasContainer');
-    const slidesContainer = document.getElementById('slidesContainer');
-    const thumbnailsContainer = document.getElementById('thumbnails');
-    const slideCounter = document.getElementById('slideCounter');
+    const container = document.querySelector('.canvas-container');
     const copyContent = document.getElementById('copyContent');
-
-    // Limpiar
-    slidesContainer.innerHTML = '';
-    thumbnailsContainer.innerHTML = '';
-
-    // Aplicar formato
-    canvasContainer.className = 'canvas-container';
+    
+    // Limpiar contenedor
+    container.innerHTML = '';
+    
+    // Aplicar clase de formato
+    container.className = 'canvas-container';
     if (formato === 'stories') {
-        canvasContainer.classList.add('formato-stories');
+        container.classList.add('formato-stories');
     } else if (formato === 'horizontal') {
-        canvasContainer.classList.add('formato-horizontal');
+        container.classList.add('formato-horizontal');
+    } else {
+        container.classList.add('formato-cuadrado');
     }
-
-    // Renderizar cada slide
+    
+    // Renderizar slides
     state.carrusel.slides.forEach((slide, index) => {
-        // Crear slide
-        const slideDiv = document.createElement('div');
-        slideDiv.className = 'slide';
-        slideDiv.dataset.index = index;
-        if (index === 0) slideDiv.classList.add('active');
+        const slideElement = crearSlideElement(slide, index, formato);
+        container.appendChild(slideElement);
+    });
+    
+    // Actualizar copy
+    copyContent.textContent = state.copy.contenido;
+    
+    // Mostrar primer slide
+    cambiarSlide(0);
+}
 
-        if (slide.tipo === 'cierre') {
-            // Slide 5 - Cierre
-            slideDiv.innerHTML = `
-                <div class="slide-cierre">
-                    <div class="slide-title">${slide.titulo}</div>
-                    <ul class="slide-list">
-                        ${slide.puntos.map(p => `<li>${p.replace('✓', '').trim()}</li>`).join('')}
-                    </ul>
-                    ${slide.cta ? `<div class="slide-cta-text">${slide.cta}</div>` : ''}
-                    <div class="slide-dm-btn">Envía DM 🚀</div>
-                    <div class="slide-tag">${slide.firma || '#DESPEGAconOdiley'}</div>
-                </div>
-            `;
+function crearSlideElement(slide, index, formato) {
+    const slideDiv = document.createElement('div');
+    slideDiv.className = 'slide';
+    slideDiv.dataset.index = index;
+    
+    // Aplicar tipografía seleccionada
+    const tipografiaClass = `tipografia-${state.preferencias.tipografia}`;
+    slideDiv.classList.add(tipografiaClass);
+    
+    // SLIDE 5 ESPECIAL (índice 4): Sin imagen, fondo crema, formato resumen
+    if (index === 4) {
+        slideDiv.classList.add('slide-resumen');
+        
+        // Parsear puntos del texto de forma segura
+        let puntosHTML = '';
+        if (slide.texto && typeof slide.texto === 'string') {
+            const puntos = slide.texto.split('\n').filter(p => p.trim().length > 0).slice(0, 3);
+            puntosHTML = puntos.map(punto => `
+                <div class="punto-resumen">✓ ${punto.replace(/^[•\-\*]\s*/, '')}</div>
+            `).join('');
+        } else if (slide.puntos && Array.isArray(slide.puntos)) {
+            // Si la IA genera un array de puntos
+            puntosHTML = slide.puntos.slice(0, 3).map(punto => `
+                <div class="punto-resumen">✓ ${punto}</div>
+            `).join('');
         } else {
-            // Slides 1-4 - Con imagen de fondo
-            slideDiv.innerHTML = `
-                <img src="${state.imagenBase64}" alt="Background" class="slide-bg">
-                <div class="slide-overlay">
-                    <div class="slide-title">${slide.titulo}</div>
-                    ${slide.texto ? `<div class="slide-text">${slide.texto}</div>` : ''}
-                    ${slide.cta_button ? `<div class="slide-cta">${slide.cta_button}</div>` : ''}
-                    <div class="slide-tag">#DESPEGAconOdiley</div>
-                </div>
+            // Fallback: puntos por defecto
+            puntosHTML = `
+                <div class="punto-resumen">✓ Sistema paso a paso probado</div>
+                <div class="punto-resumen">✓ Acompañamiento personalizado</div>
+                <div class="punto-resumen">✓ Sin riesgos ni complicaciones</div>
             `;
         }
-
-        slidesContainer.appendChild(slideDiv);
-
-        // Crear thumbnail
-        const thumb = document.createElement('div');
-        thumb.className = 'thumbnail';
-        thumb.textContent = index + 1;
-        if (index === 0) thumb.classList.add('active');
-        thumb.addEventListener('click', () => cambiarSlide(index));
-        thumbnailsContainer.appendChild(thumb);
-    });
-
-    // Actualizar contador
-    slideCounter.textContent = `1 / ${state.carrusel.slides.length}`;
-
-    // Renderizar copy
-    copyContent.textContent = state.copy.contenido;
+        
+        slideDiv.innerHTML = `
+            <div class="slide-content-resumen">
+                <h2 class="slide-title">${slide.titulo || 'De tu local a todo México'}</h2>
+                <div class="puntos-container">
+                    ${puntosHTML}
+                </div>
+                <p class="slide-pregunta">${slide.pregunta || '¿Listo para DESPEGAR? Escríbeme por DM 📩'}</p>
+                <div class="slide-cta">${slide.cta || 'Envía DM 🚀'}</div>
+            </div>
+            <div class="slide-hashtag">#DESPEGAconODILEY🚀</div>
+        `;
+    } else {
+        // SLIDES 1-4 NORMALES: Con imagen + overlay
+        const overlayConfig = state.preferencias.overlayPorSlide[index] || {
+            enabled: true,
+            color: state.preferencias.overlayColor,
+            opacity: state.preferencias.overlayOpacity
+        };
+        
+        slideDiv.innerHTML = `
+            <img src="${state.imagenBase64}" alt="Fondo" class="slide-background">
+            ${overlayConfig.enabled ? `
+                <div class="slide-overlay" style="background-color: ${overlayConfig.color}; opacity: ${overlayConfig.opacity};"></div>
+            ` : ''}
+            <div class="slide-content">
+                <h2 class="slide-title">${slide.titulo}</h2>
+                <p class="slide-text">${slide.texto}</p>
+                ${slide.cta_button ? `<div class="slide-cta">${slide.cta_button}</div>` : '<div class="slide-cta">Envía DM 🚀</div>'}
+            </div>
+            <div class="slide-number">${index + 1}/${state.carrusel.slides.length}</div>
+            <div class="slide-hashtag">#DESPEGAconODILEY🚀</div>
+        `;
+    }
+    
+    return slideDiv;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -348,17 +388,13 @@ btnNextSlide.addEventListener('click', () => {
 
 function cambiarSlide(index) {
     state.slideActual = index;
-
-    // Actualizar slides
-    document.querySelectorAll('.slide').forEach((slide, i) => {
+    
+    // Actualizar slides visibles
+    const slides = document.querySelectorAll('.slide');
+    slides.forEach((slide, i) => {
         slide.classList.toggle('active', i === index);
     });
-
-    // Actualizar thumbnails
-    document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
-        thumb.classList.toggle('active', i === index);
-    });
-
+    
     // Actualizar contador
     document.getElementById('slideCounter').textContent = 
         `${index + 1} / ${state.carrusel.slides.length}`;
@@ -540,9 +576,14 @@ btnDescargar.addEventListener('click', async () => {
             // Esperar un momento para que se renderice
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            // Capturar
+            // Obtener el ancho real del slide para calcular el scale correcto
+            const slideWidth = slides[i].offsetWidth;
+            const targetWidth = 1080; // Ancho deseado siempre
+            const scale = targetWidth / slideWidth; // Calcular scale dinámico
+
+            // Capturar con scale preciso para obtener exactamente 1080px de ancho
             const canvas = await html2canvas(slides[i], {
-                scale: 2,
+                scale: scale,
                 backgroundColor: null,
                 logging: false,
                 useCORS: true
@@ -595,6 +636,337 @@ btnNuevoCarrusel.addEventListener('click', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// SECCIÓN 10: MODAL DE EDICIÓN
+// ═══════════════════════════════════════════════════════════════
+
+const btnEditarDiseno = document.getElementById('btnEditarDiseno');
+const editModal = document.getElementById('editModal');
+const btnCloseModal = document.getElementById('btnCloseModal');
+
+// Abrir modal
+btnEditarDiseno.addEventListener('click', () => {
+    editModal.classList.add('active');
+    actualizarModalConSlideActual();
+});
+
+// Cerrar modal
+btnCloseModal.addEventListener('click', () => {
+    editModal.classList.remove('active');
+});
+
+// Cerrar al hacer click fuera
+editModal.addEventListener('click', (e) => {
+    if (e.target === editModal) {
+        editModal.classList.remove('active');
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 11: TABS DEL MODAL
+// ═══════════════════════════════════════════════════════════════
+
+const tabButtons = document.querySelectorAll('.modal-tab');
+const tabPanes = document.querySelectorAll('.tab-pane');
+
+tabButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const targetTab = button.dataset.tab;
+        
+        // Actualizar botones
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Actualizar panes
+        tabPanes.forEach(pane => pane.classList.remove('active'));
+        document.getElementById(`tab-${targetTab}`).classList.add('active');
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 12: SELECTOR DE TIPOGRAFÍA
+// ═══════════════════════════════════════════════════════════════
+
+const tipografiaOptions = document.querySelectorAll('.tipografia-option');
+
+tipografiaOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        // Actualizar selección visual
+        tipografiaOptions.forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        
+        // Guardar en estado
+        state.preferencias.tipografia = option.dataset.tipografia;
+        
+        // Aplicar a todos los slides
+        aplicarTipografiaATodos();
+        
+        // Guardar preferencias
+        guardarPreferencias();
+    });
+});
+
+function aplicarTipografiaATodos() {
+    const slides = document.querySelectorAll('.slide');
+    slides.forEach(slide => {
+        // Remover todas las clases de tipografía
+        slide.classList.remove('tipografia-clasico', 'tipografia-moderno', 'tipografia-bold', 'tipografia-elegante', 'tipografia-tech');
+        // Agregar la nueva
+        slide.classList.add(`tipografia-${state.preferencias.tipografia}`);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 13: EDITOR DE COLOR DE OVERLAY
+// ═══════════════════════════════════════════════════════════════
+
+const overlayColorPicker = document.getElementById('overlayColorPicker');
+const overlayOpacitySlider = document.getElementById('overlayOpacitySlider');
+const overlayOpacityValue = document.getElementById('overlayOpacityValue');
+const overlayToggle = document.getElementById('overlayToggle');
+const aplicarATodosBtn = document.getElementById('aplicarATodos');
+
+// Color picker
+overlayColorPicker.addEventListener('input', (e) => {
+    const slideIndex = state.slideActual;
+    
+    if (!state.preferencias.overlayPorSlide[slideIndex]) {
+        state.preferencias.overlayPorSlide[slideIndex] = {
+            enabled: true,
+            color: state.preferencias.overlayColor,
+            opacity: state.preferencias.overlayOpacity
+        };
+    }
+    
+    state.preferencias.overlayPorSlide[slideIndex].color = e.target.value;
+    aplicarOverlayAlSlideActual();
+    guardarPreferencias();
+});
+
+// Opacity slider
+overlayOpacitySlider.addEventListener('input', (e) => {
+    const slideIndex = state.slideActual;
+    const opacity = parseFloat(e.target.value);
+    
+    overlayOpacityValue.textContent = `${Math.round(opacity * 100)}%`;
+    
+    if (!state.preferencias.overlayPorSlide[slideIndex]) {
+        state.preferencias.overlayPorSlide[slideIndex] = {
+            enabled: true,
+            color: state.preferencias.overlayColor,
+            opacity: state.preferencias.overlayOpacity
+        };
+    }
+    
+    state.preferencias.overlayPorSlide[slideIndex].opacity = opacity;
+    aplicarOverlayAlSlideActual();
+    guardarPreferencias();
+});
+
+// Toggle overlay
+overlayToggle.addEventListener('change', (e) => {
+    const slideIndex = state.slideActual;
+    const enabled = e.target.checked;
+    
+    if (!state.preferencias.overlayPorSlide[slideIndex]) {
+        state.preferencias.overlayPorSlide[slideIndex] = {
+            enabled: true,
+            color: state.preferencias.overlayColor,
+            opacity: state.preferencias.overlayOpacity
+        };
+    }
+    
+    state.preferencias.overlayPorSlide[slideIndex].enabled = enabled;
+    aplicarOverlayAlSlideActual();
+    guardarPreferencias();
+});
+
+// Aplicar a todos los slides
+aplicarATodosBtn.addEventListener('click', () => {
+    if (!confirm('¿Aplicar esta configuración de overlay a todos los slides?')) return;
+    
+    const slideIndex = state.slideActual;
+    const config = state.preferencias.overlayPorSlide[slideIndex] || {
+        enabled: true,
+        color: state.preferencias.overlayColor,
+        opacity: state.preferencias.overlayOpacity
+    };
+    
+    // Aplicar a todos
+    state.carrusel.slides.forEach((_, index) => {
+        state.preferencias.overlayPorSlide[index] = { ...config };
+    });
+    
+    // Actualizar preferencias globales
+    state.preferencias.overlayColor = config.color;
+    state.preferencias.overlayOpacity = config.opacity;
+    
+    // Re-renderizar
+    const formato = document.querySelector('.canvas-container').classList.contains('formato-stories') 
+        ? 'stories' 
+        : document.querySelector('.canvas-container').classList.contains('formato-horizontal')
+        ? 'horizontal'
+        : 'cuadrado';
+    renderizarCarrusel(formato);
+    cambiarSlide(state.slideActual);
+    
+    guardarPreferencias();
+});
+
+function aplicarOverlayAlSlideActual() {
+    const slideIndex = state.slideActual;
+    const slideElement = document.querySelector(`.slide[data-index="${slideIndex}"]`);
+    if (!slideElement) return;
+    
+    const config = state.preferencias.overlayPorSlide[slideIndex];
+    let overlay = slideElement.querySelector('.slide-overlay');
+    
+    if (config.enabled) {
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'slide-overlay';
+            slideElement.insertBefore(overlay, slideElement.querySelector('.slide-content'));
+        }
+        overlay.style.backgroundColor = config.color;
+        overlay.style.opacity = config.opacity;
+    } else {
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 14: EDICIÓN DE CONTENIDO DE TEXTO
+// ═══════════════════════════════════════════════════════════════
+
+const editTituloInput = document.getElementById('editTitulo');
+const editTextoInput = document.getElementById('editTexto');
+const editCtaInput = document.getElementById('editCta');
+const btnGuardarCambios = document.getElementById('btnGuardarCambios');
+
+// Guardar cambios de texto
+btnGuardarCambios.addEventListener('click', () => {
+    const slideIndex = state.slideActual;
+    
+    // Actualizar estado
+    state.carrusel.slides[slideIndex].titulo = editTituloInput.value;
+    state.carrusel.slides[slideIndex].texto = editTextoInput.value;
+    
+    // Slides 1-4 usan cta_button, Slide 5 usa cta
+    if (slideIndex < 4) {
+        state.carrusel.slides[slideIndex].cta_button = editCtaInput.value;
+    } else {
+        state.carrusel.slides[slideIndex].cta = editCtaInput.value;
+    }
+    
+    // Actualizar slide visual
+    const slideElement = document.querySelector(`.slide[data-index="${slideIndex}"]`);
+    if (slideElement) {
+        slideElement.querySelector('.slide-title').textContent = editTituloInput.value;
+        slideElement.querySelector('.slide-text').textContent = editTextoInput.value;
+        
+        const ctaElement = slideElement.querySelector('.slide-cta');
+        const ctaValue = editCtaInput.value || 'Envía DM 🚀'; // CTA por defecto
+        if (ctaElement) {
+            ctaElement.textContent = ctaValue;
+        } else {
+            const newCta = document.createElement('div');
+            newCta.className = 'slide-cta';
+            newCta.textContent = ctaValue;
+            slideElement.querySelector('.slide-content').appendChild(newCta);
+        }
+    }
+    
+    // Feedback visual
+    const originalText = btnGuardarCambios.textContent;
+    btnGuardarCambios.textContent = '✓ Guardado';
+    btnGuardarCambios.style.background = '#8B9D77';
+    
+    setTimeout(() => {
+        btnGuardarCambios.textContent = originalText;
+        btnGuardarCambios.style.background = '';
+    }, 2000);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 15: ACTUALIZAR MODAL AL CAMBIAR SLIDE
+// ═══════════════════════════════════════════════════════════════
+
+function actualizarModalConSlideActual() {
+    const slideIndex = state.slideActual;
+    const slide = state.carrusel.slides[slideIndex];
+    
+    // Actualizar tab de contenido
+    editTituloInput.value = slide.titulo;
+    editTextoInput.value = slide.texto;
+    
+    // Slides 1-4 usan cta_button, Slide 5 usa cta
+    if (slideIndex < 4) {
+        editCtaInput.value = slide.cta_button || '';
+    } else {
+        editCtaInput.value = slide.cta || '';
+    }
+    
+    // Actualizar controles de overlay
+    const overlayConfig = state.preferencias.overlayPorSlide[slideIndex] || {
+        enabled: true,
+        color: state.preferencias.overlayColor,
+        opacity: state.preferencias.overlayOpacity
+    };
+    
+    overlayColorPicker.value = overlayConfig.color;
+    overlayOpacitySlider.value = overlayConfig.opacity;
+    overlayOpacityValue.textContent = `${Math.round(overlayConfig.opacity * 100)}%`;
+    overlayToggle.checked = overlayConfig.enabled;
+    
+    // Actualizar selector de tipografía
+    tipografiaOptions.forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.tipografia === state.preferencias.tipografia);
+    });
+}
+
+// Actualizar modal cuando cambia el slide
+const originalCambiarSlide = cambiarSlide;
+cambiarSlide = function(index) {
+    originalCambiarSlide(index);
+    if (editModal.classList.contains('active')) {
+        actualizarModalConSlideActual();
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 16: PERSISTENCIA DE PREFERENCIAS
+// ═══════════════════════════════════════════════════════════════
+
+function guardarPreferencias() {
+    try {
+        localStorage.setItem('despega_preferencias', JSON.stringify(state.preferencias));
+        console.log('✅ Preferencias guardadas');
+    } catch (error) {
+        console.error('Error al guardar preferencias:', error);
+    }
+}
+
+function cargarPreferencias() {
+    try {
+        const saved = localStorage.getItem('despega_preferencias');
+        if (saved) {
+            const preferencias = JSON.parse(saved);
+            
+            // Mantener overlay por slide vacío (cada carrusel empieza limpio)
+            state.preferencias = {
+                ...preferencias,
+                overlayPorSlide: {}
+            };
+            
+            console.log('✅ Preferencias cargadas');
+        }
+    } catch (error) {
+        console.error('Error al cargar preferencias:', error);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════════════
 
@@ -602,3 +974,4 @@ console.log('✅ DESPEGA Content Studio cargado');
 console.log('💙 Con identidad EME360PRO');
 console.log('🔐 Sistema de autenticación JWT activado');
 console.log(`🌐 API Base URL: ${API_BASE_URL || 'Producción (mismo dominio)'}`);
+console.log('🎨 Modal de edición activado');
