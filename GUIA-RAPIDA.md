@@ -23,7 +23,7 @@ npm install
 ```
 ⏱️ Espera 1-2 minutos mientras se descargan las librerías
 
-### 4️⃣ Configurar API Key de Claude
+### 4️⃣ Configurar API Key de Claude 3.5
 ```bash
 # Copia el archivo de ejemplo
 copy .env.example .env    # Windows
