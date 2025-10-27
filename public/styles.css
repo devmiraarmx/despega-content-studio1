@@ -1270,7 +1270,7 @@ body {
 
 .preview-slide-wrapper .canvas-container {
     margin: 0 auto;
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-lg);
 }
 
 /* ═════════════════════════════════════════════════════════════
