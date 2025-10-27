@@ -1258,6 +1258,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: auto;
+}
+
+/* Preview de slide dentro del modal */
+.preview-slide-wrapper {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.preview-slide-wrapper .canvas-container {
+    margin: 0 auto;
+    box-shadow: var(--shadow-xl);
 }
 
 /* ═════════════════════════════════════════════════════════════
@@ -1293,7 +1306,7 @@ body {
     .radio-group {
         grid-template-columns: 1fr;
     }
-    
+
     .tipografia-grid {
         grid-template-columns: 1fr;
     }
@@ -1315,9 +1328,132 @@ body {
 
     .modal-tab {
         white-space: nowrap;
+        font-size: 0.9rem;
+        padding: var(--space-3) var(--space-4);
     }
 
     .edit-modal {
         padding: 0;
+    }
+
+    /* Ajustes para el modal body en móvil */
+    .modal-body {
+        padding: var(--space-4);
+    }
+
+    .modal-header {
+        padding: var(--space-4);
+    }
+
+    .modal-header h2 {
+        font-size: 1.25rem;
+    }
+
+    /* Canvas container más pequeño en móvil */
+    .canvas-container {
+        max-width: 100% !important;
+        margin-bottom: var(--space-4);
+    }
+
+    /* Slides: reducir padding en móvil */
+    .slide {
+        padding: var(--space-4);
+    }
+
+    /* Ajustar tamaños de fuente en slides para móvil */
+    .slide-title {
+        font-size: 1.5rem;
+    }
+
+    .slide-text {
+        font-size: 0.95rem;
+    }
+
+    .slide-cta {
+        padding: var(--space-2) var(--space-4);
+        font-size: 0.9rem;
+    }
+
+    /* Preview container en móvil */
+    .preview-container {
+        padding: var(--space-3);
+        min-height: 250px;
+    }
+
+    .preview-slide-wrapper {
+        max-width: 100%;
+    }
+
+    /* Tipografía options más pequeñas en móvil */
+    .tipografia-preview {
+        min-height: 80px;
+        padding: var(--space-3);
+    }
+
+    .preview-title {
+        font-size: 0.9rem;
+    }
+
+    .preview-text {
+        font-size: 0.75rem;
+    }
+
+    /* Editor inputs en móvil */
+    .editor-section {
+        margin-bottom: var(--space-4);
+    }
+
+    .btn-close {
+        width: 36px;
+        height: 36px;
+        font-size: 1.75rem;
+    }
+}
+
+/* Estilos adicionales para pantallas muy pequeñas */
+@media (max-width: 480px) {
+    /* Slides aún más compactos */
+    .slide {
+        padding: var(--space-3);
+    }
+
+    .slide-title {
+        font-size: 1.25rem;
+        margin-bottom: var(--space-3);
+    }
+
+    .slide-text {
+        font-size: 0.85rem;
+        margin-bottom: var(--space-3);
+    }
+
+    .slide-cta {
+        padding: var(--space-2) var(--space-3);
+        font-size: 0.85rem;
+    }
+
+    /* Modal header más compacto */
+    .modal-header h2 {
+        font-size: 1.1rem;
+    }
+
+    .modal-tabs {
+        padding: 0 var(--space-3);
+        gap: var(--space-1);
+    }
+
+    .modal-tab {
+        font-size: 0.85rem;
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .modal-body {
+        padding: var(--space-3);
+    }
+
+    /* Preview container más compacto */
+    .preview-container {
+        padding: var(--space-2);
+        min-height: 200px;
     }
 }

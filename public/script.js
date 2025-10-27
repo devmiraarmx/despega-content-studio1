@@ -671,14 +671,24 @@ const tabPanes = document.querySelectorAll('.tab-pane');
 tabButtons.forEach(button => {
     button.addEventListener('click', () => {
         const targetTab = button.dataset.tab;
-        
+
         // Actualizar botones
         tabButtons.forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
-        
+
         // Actualizar panes
         tabPanes.forEach(pane => pane.classList.remove('active'));
         document.getElementById(`tab-${targetTab}`).classList.add('active');
+
+        // Si se abre el tab de preview, renderizar el slide
+        if (targetTab === 'preview') {
+            setTimeout(() => {
+                const previewSlideWrapper = document.getElementById('previewSlideWrapper');
+                if (previewSlideWrapper && typeof renderizarPreviewSlide === 'function') {
+                    renderizarPreviewSlide();
+                }
+            }, 50);
+        }
     });
 });
 
@@ -931,11 +941,104 @@ cambiarSlide = function(index) {
     originalCambiarSlide(index);
     if (editModal.classList.contains('active')) {
         actualizarModalConSlideActual();
+
+        // Actualizar preview si está visible
+        const previewTab = document.getElementById('tab-preview');
+        if (previewTab && previewTab.classList.contains('active')) {
+            setTimeout(() => {
+                if (typeof renderizarPreviewSlide === 'function') {
+                    renderizarPreviewSlide();
+                }
+            }, 50);
+        }
     }
 };
 
 // ═══════════════════════════════════════════════════════════════
-// SECCIÓN 16: PERSISTENCIA DE PREFERENCIAS
+// SECCIÓN 16: RENDERIZAR PREVIEW EN MODAL
+// ═══════════════════════════════════════════════════════════════
+
+const previewSlideWrapper = document.getElementById('previewSlideWrapper');
+
+function renderizarPreviewSlide() {
+    if (!state.carrusel || !state.carrusel.slides) {
+        previewSlideWrapper.innerHTML = '<p style="text-align: center; color: #666;">Genera un carrusel primero para ver el preview</p>';
+        return;
+    }
+
+    const slideIndex = state.slideActual;
+    const slide = state.carrusel.slides[slideIndex];
+    const formato = state.formato;
+
+    // Crear el container del canvas con el formato correcto
+    const canvasContainer = document.createElement('div');
+    canvasContainer.className = 'canvas-container';
+
+    if (formato === 'stories') {
+        canvasContainer.classList.add('formato-stories');
+    } else if (formato === 'horizontal') {
+        canvasContainer.classList.add('formato-horizontal');
+    } else {
+        canvasContainer.classList.add('formato-cuadrado');
+    }
+
+    // Crear el slide element con la función existente
+    const slideElement = crearSlideElement(slide, slideIndex, formato);
+    slideElement.classList.add('active'); // Hacerlo visible
+
+    // Agregar al container
+    canvasContainer.appendChild(slideElement);
+
+    // Limpiar y agregar al wrapper
+    previewSlideWrapper.innerHTML = '';
+    previewSlideWrapper.appendChild(canvasContainer);
+}
+
+// Actualizar preview cuando cambian los controles
+function actualizarPreviewSiVisible() {
+    const previewTab = document.getElementById('tab-preview');
+    if (previewTab && previewTab.classList.contains('active')) {
+        renderizarPreviewSlide();
+    }
+}
+
+// Conectar actualizaciones de controles al preview
+overlayColorPicker.addEventListener('input', actualizarPreviewSiVisible);
+overlayOpacitySlider.addEventListener('input', actualizarPreviewSiVisible);
+overlayToggle.addEventListener('change', actualizarPreviewSiVisible);
+
+editTituloInput.addEventListener('input', () => {
+    const slideIndex = state.slideActual;
+    state.carrusel.slides[slideIndex].titulo = editTituloInput.value;
+    actualizarPreviewSiVisible();
+});
+
+editTextoInput.addEventListener('input', () => {
+    const slideIndex = state.slideActual;
+    state.carrusel.slides[slideIndex].texto = editTextoInput.value;
+    actualizarPreviewSiVisible();
+});
+
+editCtaInput.addEventListener('input', () => {
+    const slideIndex = state.slideActual;
+    const slide = state.carrusel.slides[slideIndex];
+
+    if (slideIndex < 4) {
+        slide.cta_button = editCtaInput.value;
+    } else {
+        slide.cta = editCtaInput.value;
+    }
+    actualizarPreviewSiVisible();
+});
+
+tipografiaOptions.forEach(option => {
+    option.addEventListener('click', () => {
+        setTimeout(() => actualizarPreviewSiVisible(), 50);
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SECCIÓN 17: PERSISTENCIA DE PREFERENCIAS
 // ═══════════════════════════════════════════════════════════════
 
 function guardarPreferencias() {
