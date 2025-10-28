@@ -596,6 +596,18 @@ body {
     max-width: 90%;
 }
 
+@media (max-width: 768px) {
+    .slide {
+        padding: var(--space-4);
+    }
+}
+
+@media (max-width: 480px) {
+    .slide {
+        padding: var(--space-3);
+    }
+}
+
 .slide-title {
     font-size: 2rem;
     font-weight: 700;
@@ -713,6 +725,66 @@ body {
     transform: translateX(50%);
     text-align: center;
     text-shadow: none; /* Sin sombra en fondo claro */
+}
+
+@media (max-width: 768px) {
+    .slide-resumen .slide-title {
+        font-size: 1.4rem;
+        margin-bottom: var(--space-4);
+    }
+
+    .punto-resumen {
+        font-size: 0.95rem;
+        margin-bottom: var(--space-3);
+    }
+
+    .slide-pregunta {
+        font-size: 0.95rem;
+        margin: var(--space-4) 0 var(--space-3);
+    }
+
+    .slide-resumen .slide-cta {
+        padding: var(--space-3) var(--space-4);
+        font-size: 0.95rem;
+    }
+
+    .slide-resumen .slide-hashtag {
+        font-size: 0.85rem;
+        bottom: var(--space-2);
+    }
+}
+
+@media (max-width: 480px) {
+    .slide-resumen .slide-title {
+        font-size: 1.2rem;
+        margin-bottom: var(--space-3);
+    }
+
+    .punto-resumen {
+        font-size: 0.85rem;
+        margin-bottom: var(--space-2);
+    }
+
+    .slide-pregunta {
+        font-size: 0.85rem;
+        margin: var(--space-3) 0 var(--space-2);
+    }
+
+    .slide-resumen .slide-cta {
+        padding: var(--space-2) var(--space-3);
+        font-size: 0.85rem;
+    }
+
+    .slide-resumen .slide-hashtag {
+        font-size: 0.75rem;
+        position: relative;
+        bottom: auto;
+        margin-top: var(--space-3);
+    }
+
+    .puntos-container {
+        margin: var(--space-4) 0;
+    }
 }
 
 /* Navegación de Slides */
@@ -1356,10 +1428,6 @@ body {
         min-height: 300px;
     }
 
-    /* Slides: reducir padding en móvil */
-    .slide {
-        padding: var(--space-4);
-    }
 
     /* Ajustar tamaños de fuente en slides para móvil */
     .slide-title {
@@ -1413,11 +1481,6 @@ body {
 
 /* Estilos adicionales para pantallas muy pequeñas */
 @media (max-width: 480px) {
-    /* Slides aún más compactos */
-    .slide {
-        padding: var(--space-3);
-    }
-
     .slide-title {
         font-size: 1.25rem;
         margin-bottom: var(--space-3);
