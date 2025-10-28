@@ -522,7 +522,7 @@ body {
     gap: var(--space-3);
 }
 
-/* Canvas Container */
+/* Canvas Container - Padding-top hack para aspect ratio */
 .canvas-container {
     position: relative;
     width: 100%;
@@ -534,17 +534,17 @@ body {
 }
 
 .canvas-container.formato-cuadrado {
-    aspect-ratio: 1 / 1;
+    padding-top: 100%; /* 1:1 aspect ratio */
     max-width: 600px;
 }
 
 .canvas-container.formato-stories {
-    aspect-ratio: 9 / 16;
+    padding-top: 177.78%; /* 9:16 aspect ratio */
     max-width: 400px;
 }
 
 .canvas-container.formato-horizontal {
-    aspect-ratio: 1.91 / 1;
+    padding-top: 52.36%; /* 1.91:1 aspect ratio */
     max-width: 600px;
 }
 
@@ -1353,6 +1353,7 @@ body {
     .canvas-container {
         max-width: 100% !important;
         margin-bottom: var(--space-4);
+        min-height: 300px;
     }
 
     /* Slides: reducir padding en móvil */
